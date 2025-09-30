@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply m-0 p-0 box-border;
+  }
+
+  body {
+    @apply font-system bg-bg-primary text-text-primary overflow-hidden h-screen;
+  }
+
+  /* Custom scrollbar styles */
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-3;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-bg-secondary rounded;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border rounded border-2 border-bg-secondary;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-text-tertiary;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-track {
+    @apply bg-bg-secondary;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border rounded;
+  }
+}
+
+@layer utilities {
+  .highlight-search {
+    @apply bg-highlight;
+  }
+}
+
+/* Portrait video optimization for lightbox */
+.portrait-video {
+  max-width: min(60vw, calc(95vh * 0.5625));
+}
+
+.portrait-video video {
+  @apply w-full h-auto;
+}
+
+/* Audio controls customization */
+audio::-webkit-media-controls-panel {
+  @apply bg-bg-secondary;
+}
+
+video::-webkit-media-controls-panel {
+  background-color: rgba(0, 0, 0, 0.7);
+}

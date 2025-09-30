@@ -1,0 +1,121 @@
+{
+  "date": "2025-07-27",
+  "stats": {
+    "conversationCount": 5,
+    "messageCount": 37,
+    "mediaCount": 32
+  },
+  "conversations": [
+    {
+      "id": "conv-1",
+      "name": "Chat - Alice Smith",
+      "type": "dm",
+      "dir": "./media/conv-1",
+      "messages": [
+        {
+          "from_user": "alice_smith",
+          "is_sender": false,
+          "content": "Hey! How's it going?",
+          "created": "2025-07-27 10:30:00 UTC",
+          "media_type": "TEXT",
+          "message_type": "chat"
+        },
+        {
+          "from_user": "john_doe",
+          "is_sender": true,
+          "content": "Pretty good! Just working on some projects",
+          "created": "2025-07-27 10:31:15 UTC",
+          "media_type": "TEXT",
+          "message_type": "chat"
+        },
+        {
+          "from_user": "alice_smith",
+          "is_sender": false,
+          "content": "Nice! Check this out",
+          "created": "2025-07-27 10:32:00 UTC",
+          "media_type": "IMAGE",
+          "message_type": "snap",
+          "media_ids": "img-001",
+          "media_locations": []
+        }
+      ],
+      "stats": {
+        "message_count": 3,
+        "date_range": {
+          "first_message": "2025-07-27 10:30:00 UTC",
+          "last_message": "2025-07-27 10:32:00 UTC"
+        }
+      },
+      "metadata": {
+        "participants": [
+          {
+            "username": "alice_smith",
+            "display_name": "Alice Smith"
+          }
+        ]
+      }
+    },
+    {
+      "id": "conv-2",
+      "name": "Chat - Bob Jones",
+      "type": "dm",
+      "dir": "./media/conv-2",
+      "messages": [
+        {
+          "from_user": "bob_jones",
+          "is_sender": false,
+          "content": "Want to grab lunch?",
+          "created": "2025-07-27 12:15:00 UTC",
+          "media_type": "TEXT",
+          "message_type": "chat"
+        },
+        {
+          "from_user": "john_doe",
+          "is_sender": true,
+          "content": "Sure! Where?",
+          "created": "2025-07-27 12:16:30 UTC",
+          "media_type": "TEXT",
+          "message_type": "chat"
+        }
+      ],
+      "stats": {
+        "message_count": 2,
+        "date_range": {
+          "first_message": "2025-07-27 12:15:00 UTC",
+          "last_message": "2025-07-27 12:16:30 UTC"
+        }
+      },
+      "metadata": {
+        "participants": [
+          {
+            "username": "bob_jones",
+            "display_name": "Bob Jones"
+          }
+        ]
+      }
+    }
+  ],
+  "orphanedMedia": {
+    "orphaned_media_count": 3,
+    "orphaned_media": [
+      {
+        "path": "orphaned/image1.jpg",
+        "filename": "image1.jpg",
+        "type": "IMAGE",
+        "extension": "jpg"
+      },
+      {
+        "path": "orphaned/video1.mp4",
+        "filename": "video1.mp4",
+        "type": "VIDEO",
+        "extension": "mp4"
+      },
+      {
+        "path": "orphaned/audio1.mp3",
+        "filename": "audio1.mp3",
+        "type": "AUDIO",
+        "extension": "mp3"
+      }
+    ]
+  }
+}
