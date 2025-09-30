@@ -64,3 +64,33 @@ audio::-webkit-media-controls-panel {
 video::-webkit-media-controls-panel {
   background-color: rgba(0, 0, 0, 0.7);
 }
+
+/* Date picker dropdown styling */
+.rdp-custom .rdp-dropdown_root {
+  @apply relative inline-flex;
+}
+
+.rdp-custom .rdp-dropdown {
+  @apply bg-bg-tertiary hover:bg-hover-bg border border-border rounded-md text-text-primary font-bold text-base cursor-pointer transition-all;
+  padding: 0.625rem 2.25rem 0.625rem 1rem;
+  min-width: 120px;
+}
+
+.rdp-custom .rdp-dropdown:focus {
+  @apply outline-none ring-2 ring-accent;
+}
+
+.rdp-custom .rdp-chevron {
+  @apply fill-accent;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.rdp-custom .rdp-nav {
+  @apply hidden;
+}
+
+/* Hide the caption label when using dropdowns */
+.rdp-custom .rdp-caption_label {
+  @apply hidden;
+}

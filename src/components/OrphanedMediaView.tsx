@@ -2,17 +2,13 @@ import { useState, useEffect } from 'react';
 import { OrphanedMedia, OrphanedMediaItem } from '@/types';
 import { useArchiveStore } from '@/store/useArchiveStore';
 
-interface OrphanedMediaModalProps {
+interface OrphanedMediaViewProps {
   orphanedMedia: OrphanedMedia | null;
 }
 
-export default function OrphanedMediaModal({
+export default function OrphanedMediaView({
   orphanedMedia,
-}: OrphanedMediaModalProps) {
-  const showOrphanedModal = useArchiveStore((state) => state.showOrphanedModal);
-  const setShowOrphanedModal = useArchiveStore(
-    (state) => state.setShowOrphanedModal
-  );
+}: OrphanedMediaViewProps) {
   const openLightbox = useArchiveStore((state) => state.openLightbox);
   const [filter, setFilter] = useState<string>('all');
   const [filteredItems, setFilteredItems] = useState<OrphanedMediaItem[]>([]);
@@ -29,15 +25,16 @@ export default function OrphanedMediaModal({
     }
   }, [filter, orphanedMedia]);
 
-  useEffect(() => {
-    if (showOrphanedModal) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-  }, [showOrphanedModal]);
-
-  if (!showOrphanedModal || !orphanedMedia) return null;
+  if (!orphanedMedia || orphanedMedia.orphaned_media_count === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-bg-primary">
+        <div className="text-text-tertiary text-center">
+          <div className="text-6xl mb-4 opacity-50">📷</div>
+          <div className="text-lg font-medium">No orphaned media</div>
+        </div>
+      </div>
+    );
+  }
 
   const counts = {
     all: orphanedMedia.orphaned_media.length,
@@ -50,27 +47,8 @@ export default function OrphanedMediaModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/80 z-[1500] p-5 overflow-y-auto"
-      onClick={() => setShowOrphanedModal(false)}
-    >
-      <div
-        className="bg-bg-primary rounded-xl max-w-[1200px] mx-auto p-5 relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-center mb-5">
-          <h2 className="m-0 text-text-primary">
-            Orphaned Media - Sunday, July 27, 2025
-          </h2>
-          <button
-            className="bg-transparent border-none text-[32px] text-text-secondary cursor-pointer p-0 w-10 h-10 flex items-center justify-center rounded-lg transition-all hover:bg-bg-secondary hover:text-text-primary"
-            onClick={() => setShowOrphanedModal(false)}
-            aria-label="Close orphaned media gallery"
-          >
-            &times;
-          </button>
-        </div>
-        
+    <div className="flex-1 flex flex-col overflow-hidden bg-bg-primary">
+      <div className="px-5 py-4 bg-bg-secondary border-b border-border">
         <div className="flex gap-2.5 mb-5 flex-wrap">
           {(['all', 'IMAGE', 'VIDEO', 'AUDIO'] as const).map((f) => (
             <button
@@ -88,7 +66,13 @@ export default function OrphanedMediaModal({
           ))}
         </div>
         
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 max-h-[calc(100vh-250px)] overflow-y-auto p-2.5 custom-scrollbar">
+        <div className="text-sm text-text-secondary">
+          Showing {filteredItems.length} of {orphanedMedia.orphaned_media.length} media items
+        </div>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
           {filteredItems.map((item, index) => (
             <MediaItemCard
               key={index}
@@ -187,3 +171,4 @@ function MediaItemCard({
     </div>
   );
 }
+

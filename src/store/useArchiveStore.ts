@@ -31,10 +31,6 @@ interface ArchiveStore {
   // Lightbox state
   lightboxState: LightboxState;
   
-  // Orphaned media
-  showOrphanedModal: boolean;
-  orphanedMediaFilter: string;
-  
   // Actions
   setConversations: (conversations: Conversation[]) => void;
   setCurrentConversation: (conversation: Conversation | null) => void;
@@ -45,8 +41,6 @@ interface ArchiveStore {
   openLightbox: (src: string, type: 'image' | 'video' | 'audio', items?: MediaItem[], index?: number) => void;
   closeLightbox: () => void;
   navigateLightbox: (direction: 'prev' | 'next') => void;
-  setShowOrphanedModal: (show: boolean) => void;
-  setOrphanedMediaFilter: (filter: string) => void;
 }
 
 export const useArchiveStore = create<ArchiveStore>((set) => ({
@@ -67,8 +61,6 @@ export const useArchiveStore = create<ArchiveStore>((set) => ({
     currentIndex: -1,
     items: [],
   },
-  showOrphanedModal: false,
-  orphanedMediaFilter: 'all',
   
   setConversations: (conversations) => set({ conversations }),
   setCurrentConversation: (conversation) => set({ currentConversation: conversation }),
@@ -121,6 +113,4 @@ export const useArchiveStore = create<ArchiveStore>((set) => ({
       },
     };
   }),
-  setShowOrphanedModal: (show) => set({ showOrphanedModal: show }),
-  setOrphanedMediaFilter: (filter) => set({ orphanedMediaFilter: filter }),
 }));

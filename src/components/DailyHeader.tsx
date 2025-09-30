@@ -1,4 +1,5 @@
-import { useArchiveStore } from '@/store/useArchiveStore';
+import { useState } from 'react';
+import DatePickerPopup from './DatePickerPopup';
 
 interface DailyHeaderProps {
   date: string;
@@ -8,16 +9,18 @@ interface DailyHeaderProps {
     mediaCount: number;
   };
   orphanedCount: number;
+  showOrphanedMedia: boolean;
+  onToggleOrphanedMedia: () => void;
 }
 
 export default function DailyHeader({
   date,
   stats,
   orphanedCount,
+  showOrphanedMedia,
+  onToggleOrphanedMedia,
 }: DailyHeaderProps) {
-  const setShowOrphanedModal = useArchiveStore(
-    (state) => state.setShowOrphanedModal
-  );
+  const [showDatePicker, setShowDatePicker] = useState(false);
   
   const dateObj = new Date(date);
   const formattedDate = dateObj.toLocaleDateString('en-US', {
@@ -27,22 +30,31 @@ export default function DailyHeader({
     day: 'numeric',
   });
 
+  // TODO: This should be passed from parent component
+  // For now, only 2025-07-27 is available
+  const availableDates = [new Date('2025-07-27')];
+
   return (
-    <div className="fixed top-0 left-0 right-0 z-[100] bg-bg-secondary border-b border-border px-5 py-3 flex items-center justify-between min-h-[80px]">
-      <a
-        href="/calendar"
-        className="text-accent no-underline text-sm font-medium flex items-center gap-1 transition-all px-3 py-2 rounded hover:-translate-x-0.5"
-      >
-        ← Calendar
-      </a>
-      
-      <div className="flex-1 flex items-center justify-center gap-5">
+    <div className="fixed top-0 left-0 right-0 z-[100] bg-bg-secondary border-b border-border px-5 py-3 flex items-center justify-center min-h-[80px]">
+      <div className="flex items-center gap-5">
         <span className="px-4 py-2 bg-bg-tertiary border border-border rounded text-text-primary no-underline text-sm font-medium flex items-center gap-1.5 opacity-30 cursor-not-allowed">
           ← Previous Day
         </span>
         
         <div className="text-center">
-          <h1 className="text-xl text-accent m-0 font-semibold">
+          <h1
+            className="text-xl text-accent m-0 font-semibold cursor-pointer hover:underline transition-all"
+            onClick={() => setShowDatePicker(true)}
+            role="button"
+            tabIndex={0}
+            aria-label="Open date picker"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setShowDatePicker(true);
+              }
+            }}
+          >
             {formattedDate}
           </h1>
           <div className="text-xs text-text-secondary mt-1">
@@ -55,9 +67,17 @@ export default function DailyHeader({
               <>
                 <span className="mx-2">•</span>
                 <button
-                  className="bg-snap-purple text-white border-none px-3 py-1 rounded-2xl text-xs cursor-pointer transition-all font-medium hover:bg-[#8b41ff] hover:-translate-y-px"
-                  onClick={() => setShowOrphanedModal(true)}
-                  aria-label={`View ${orphanedCount} orphaned media items`}
+                  className={`border-none px-3 py-1 rounded-2xl text-xs cursor-pointer transition-all font-medium ${
+                    showOrphanedMedia
+                      ? 'bg-accent text-bg-primary'
+                      : 'bg-snap-purple text-white hover:bg-[#8b41ff] hover:-translate-y-px'
+                  }`}
+                  onClick={onToggleOrphanedMedia}
+                  aria-label={
+                    showOrphanedMedia
+                      ? 'Close orphaned media'
+                      : `View ${orphanedCount} orphaned media items`
+                  }
                 >
                   📷 Orphaned Media ({orphanedCount})
                 </button>
@@ -73,8 +93,14 @@ export default function DailyHeader({
           Next Day →
         </a>
       </div>
-      
-      <div className="w-[100px]"></div>
+
+      {showDatePicker && (
+        <DatePickerPopup
+          currentDate={dateObj}
+          onClose={() => setShowDatePicker(false)}
+          availableDates={availableDates}
+        />
+      )}
     </div>
   );
 }

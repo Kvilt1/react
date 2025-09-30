@@ -64,7 +64,7 @@ export function getMediaTypeIcon(mediaType: string): string {
 }
 
 export function isStatusMessage(mediaType: string): boolean {
-  return (
+  return !!(
     mediaType &&
     (mediaType.startsWith('STATUS') || mediaType === 'NONPARTICIPANTBOTRESPONSE')
   );

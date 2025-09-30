@@ -5,19 +5,13 @@ export function useKeyboardShortcuts() {
   const closeLightbox = useArchiveStore((state) => state.closeLightbox);
   const navigateLightbox = useArchiveStore((state) => state.navigateLightbox);
   const lightboxState = useArchiveStore((state) => state.lightboxState);
-  const setShowOrphanedModal = useArchiveStore(
-    (state) => state.setShowOrphanedModal
-  );
-  const showOrphanedModal = useArchiveStore((state) => state.showOrphanedModal);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // ESC to close lightbox or modal
+      // ESC to close lightbox
       if (e.key === 'Escape') {
         if (lightboxState.isOpen) {
           closeLightbox();
-        } else if (showOrphanedModal) {
-          setShowOrphanedModal(false);
         }
       }
 
@@ -38,7 +32,5 @@ export function useKeyboardShortcuts() {
     closeLightbox,
     navigateLightbox,
     lightboxState,
-    showOrphanedModal,
-    setShowOrphanedModal,
   ]);
 }

@@ -7,7 +7,7 @@ import DailyHeader from '@/components/DailyHeader';
 import ConversationList from '@/components/ConversationList';
 import MainContent from '@/components/MainContent';
 import Lightbox from '@/components/Lightbox';
-import OrphanedMediaModal from '@/components/OrphanedMediaModal';
+import OrphanedMediaView from '@/components/OrphanedMediaView';
 import KeyboardHint from '@/components/KeyboardHint';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
@@ -15,6 +15,7 @@ export default function DailyView() {
   const { date } = useParams<{ date: string }>();
   const [dayData, setDayData] = useState<DayData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showOrphanedMedia, setShowOrphanedMedia] = useState(false);
   const setConversations = useArchiveStore((state) => state.setConversations);
   const setAccountUsername = useArchiveStore(
     (state) => state.setAccountUsername
@@ -66,13 +67,20 @@ export default function DailyView() {
         date={dayData.date}
         stats={dayData.stats}
         orphanedCount={dayData.orphanedMedia?.orphaned_media_count || 0}
+        showOrphanedMedia={showOrphanedMedia}
+        onToggleOrphanedMedia={() => setShowOrphanedMedia(!showOrphanedMedia)}
       />
       <div className="flex flex-1 overflow-hidden pt-[80px]">
-        <ConversationList />
-        <MainContent />
+        {!showOrphanedMedia ? (
+          <>
+            <ConversationList />
+            <MainContent />
+          </>
+        ) : (
+          <OrphanedMediaView orphanedMedia={dayData.orphanedMedia} />
+        )}
       </div>
       <Lightbox />
-      <OrphanedMediaModal orphanedMedia={dayData.orphanedMedia} />
       <KeyboardHint />
     </div>
   );
