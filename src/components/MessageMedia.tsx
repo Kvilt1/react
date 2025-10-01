@@ -1,5 +1,7 @@
+import { useRef, useEffect } from 'react';
 import { Message, Conversation } from '@/types';
 import { getFileExtension, getMediaTypeIcon } from '@/lib/utils';
+import { useArchiveStore } from '@/store/useArchiveStore';
 
 interface MessageMediaProps {
   message: Message;
@@ -14,6 +16,69 @@ export default function MessageMedia({
 }: MessageMediaProps) {
   const mediaLocations = message.media_locations || [];
   const mediaType = message.media_type;
+  const audioRefs = useRef<(HTMLAudioElement | null)[]>([]);
+  const currentlyPlayingAudio = useArchiveStore((state) => state.currentlyPlayingAudio);
+  const setCurrentlyPlayingAudio = useArchiveStore((state) => state.setCurrentlyPlayingAudio);
+  
+  // Use a ref for immediate tracking (before state updates)
+  const isInterruptingRef = useRef(false);
+
+  const handleAudioPlay = (audioElement: HTMLAudioElement) => {
+    // Store the old audio reference if any
+    const previousAudio = currentlyPlayingAudio;
+    
+    // Mark that we're interrupting another audio
+    if (previousAudio && previousAudio !== audioElement) {
+      isInterruptingRef.current = true;
+    }
+    
+    // Set this audio as the currently playing one
+    setCurrentlyPlayingAudio(audioElement);
+    
+    // Pause and reset the previously playing audio if it's different
+    if (previousAudio && previousAudio !== audioElement) {
+      previousAudio.pause();
+      previousAudio.currentTime = 0;
+      // Reset the flag after a brief moment
+      setTimeout(() => {
+        isInterruptingRef.current = false;
+      }, 50);
+    }
+  };
+
+  const handleAudioPause = (audioElement: HTMLAudioElement) => {
+    // Don't reset if we're in the middle of switching to another audio
+    if (isInterruptingRef.current) {
+      return;
+    }
+    
+    // Only clear and reset if it's this audio that's pausing
+    if (currentlyPlayingAudio === audioElement) {
+      setCurrentlyPlayingAudio(null);
+      // Reset to start when paused
+      audioElement.currentTime = 0;
+    }
+  };
+
+  const handleAudioEnded = (audioElement: HTMLAudioElement) => {
+    // Reset to start when audio finishes playing
+    audioElement.currentTime = 0;
+    if (currentlyPlayingAudio === audioElement) {
+      setCurrentlyPlayingAudio(null);
+    }
+  };
+
+  // Cleanup: pause audio if it's playing when component unmounts
+  useEffect(() => {
+    return () => {
+      audioRefs.current.forEach((audio) => {
+        if (audio && currentlyPlayingAudio === audio) {
+          audio.pause();
+          setCurrentlyPlayingAudio(null);
+        }
+      });
+    };
+  }, [currentlyPlayingAudio, setCurrentlyPlayingAudio]);
 
   if (mediaLocations.length === 0) {
     // Show styled placeholders for different media types
@@ -82,10 +147,14 @@ export default function MessageMedia({
           return (
             <div key={idx} className="my-1">
               <audio
+                ref={(el) => (audioRefs.current[idx] = el)}
                 controls
                 preload="none"
                 src={fullPath}
                 className="w-full max-w-[300px] h-8 outline-none"
+                onPlay={(e) => handleAudioPlay(e.currentTarget)}
+                onPause={(e) => handleAudioPause(e.currentTarget)}
+                onEnded={(e) => handleAudioEnded(e.currentTarget)}
               />
             </div>
           );

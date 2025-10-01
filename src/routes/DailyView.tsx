@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { fetchDayData } from '@/lib/api';
-import { DayData, Conversation } from '@/types';
+import { loadIndexData } from '@/lib/dataLoader';
+import { DayData } from '@/types';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import DailyHeader from '@/components/DailyHeader';
 import ConversationList from '@/components/ConversationList';
@@ -13,27 +14,63 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export default function DailyView() {
   const { date } = useParams<{ date: string }>();
+  const location = useLocation();
   const [dayData, setDayData] = useState<DayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showOrphanedMedia, setShowOrphanedMedia] = useState(false);
+  const indexData = useArchiveStore((state) => state.indexData);
+  const setIndexData = useArchiveStore((state) => state.setIndexData);
   const setConversations = useArchiveStore((state) => state.setConversations);
+  const setCurrentConversation = useArchiveStore((state) => state.setCurrentConversation);
   const setAccountUsername = useArchiveStore(
     (state) => state.setAccountUsername
   );
 
   useKeyboardShortcuts();
 
+  // Load index data once on mount
+  useEffect(() => {
+    const loadIndex = async () => {
+      if (!indexData) {
+        try {
+          const data = await loadIndexData();
+          setIndexData(data);
+          setAccountUsername(data.account_owner);
+        } catch (error) {
+          console.error('Failed to load index data:', error);
+        }
+      }
+    };
+
+    loadIndex();
+  }, [indexData, setIndexData, setAccountUsername]);
+
+  // Load day data when date changes
   useEffect(() => {
     const loadData = async () => {
+      if (!indexData) return; // Wait for index data first
+      
       try {
-        const data = await fetchDayData(date || '2025-07-27');
+        setLoading(true);
+        const data = await fetchDayData(date || '2025-08-24', indexData);
         setDayData(data);
         setConversations(data.conversations);
-        
-        // Detect account username
-        const username = detectAccountUsername(data.conversations);
-        if (username) {
-          setAccountUsername(username);
+
+        // Handle conversation selection from navigation
+        const previousConversationId = (location.state as any)?.previousConversationId;
+        if (previousConversationId) {
+          // Try to find the same conversation on this day
+          const matchingConversation = data.conversations.find(
+            (conv) => conv.id === previousConversationId
+          );
+          
+          if (matchingConversation) {
+            // Same conversation exists, select it
+            setCurrentConversation(matchingConversation);
+          } else {
+            // Conversation doesn't exist on this day, clear selection
+            setCurrentConversation(null);
+          }
         }
       } catch (error) {
         console.error('Failed to load day data:', error);
@@ -43,7 +80,7 @@ export default function DailyView() {
     };
 
     loadData();
-  }, [date, setConversations, setAccountUsername]);
+  }, [date, indexData, location.state, setConversations, setCurrentConversation]);
 
   if (loading) {
     return (
@@ -84,25 +121,4 @@ export default function DailyView() {
       <KeyboardHint />
     </div>
   );
-}
-
-function detectAccountUsername(conversations: Conversation[]): string | null {
-  for (const conversation of conversations) {
-    if (conversation.messages && conversation.messages.length > 0) {
-      const senderMessages = conversation.messages.filter(
-        (msg) => msg.is_sender === true
-      );
-      
-      if (senderMessages.length > 0) {
-        const randomIndex = Math.floor(Math.random() * senderMessages.length);
-        const randomSenderMessage = senderMessages[randomIndex];
-        
-        if (randomSenderMessage.from_user) {
-          return randomSenderMessage.from_user;
-        }
-      }
-    }
-  }
-  
-  return 'unknown_user';
 }

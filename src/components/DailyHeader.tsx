@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DatePickerPopup from './DatePickerPopup';
+import { getAvailableDates } from '@/lib/dataLoader';
+import { useArchiveStore } from '@/store/useArchiveStore';
 
 interface DailyHeaderProps {
   date: string;
@@ -21,6 +24,8 @@ export default function DailyHeader({
   onToggleOrphanedMedia,
 }: DailyHeaderProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const navigate = useNavigate();
+  const currentConversation = useArchiveStore((state) => state.currentConversation);
   
   const dateObj = new Date(date);
   const formattedDate = dateObj.toLocaleDateString('en-US', {
@@ -30,16 +35,57 @@ export default function DailyHeader({
     day: 'numeric',
   });
 
-  // TODO: This should be passed from parent component
-  // For now, only 2025-07-27 is available
-  const availableDates = [new Date('2025-07-27')];
+  const availableDates = getAvailableDates();
+
+  // Find previous and next available dates
+  const { previousDate, nextDate } = useMemo(() => {
+    const sortedDates = [...availableDates].sort((a, b) => a.getTime() - b.getTime());
+    const currentIndex = sortedDates.findIndex(
+      (d) => d.toISOString().split('T')[0] === date
+    );
+
+    return {
+      previousDate: currentIndex > 0 ? sortedDates[currentIndex - 1] : null,
+      nextDate:
+        currentIndex >= 0 && currentIndex < sortedDates.length - 1
+          ? sortedDates[currentIndex + 1]
+          : null,
+    };
+  }, [availableDates, date]);
+
+  const handlePreviousDay = () => {
+    if (previousDate) {
+      const dateStr = previousDate.toISOString().split('T')[0];
+      navigate(`/day/${dateStr}`, { 
+        state: { previousConversationId: currentConversation?.id } 
+      });
+    }
+  };
+
+  const handleNextDay = () => {
+    if (nextDate) {
+      const dateStr = nextDate.toISOString().split('T')[0];
+      navigate(`/day/${dateStr}`, { 
+        state: { previousConversationId: currentConversation?.id } 
+      });
+    }
+  };
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[100] bg-bg-secondary border-b border-border px-5 py-3 flex items-center justify-center min-h-[80px]">
       <div className="flex items-center gap-5">
-        <span className="px-4 py-2 bg-bg-tertiary border border-border rounded text-text-primary no-underline text-sm font-medium flex items-center gap-1.5 opacity-30 cursor-not-allowed">
+        <button
+          onClick={handlePreviousDay}
+          disabled={!previousDate}
+          className={`px-4 py-2 bg-bg-tertiary border border-border rounded text-text-primary text-sm font-medium flex items-center gap-1.5 transition-all ${
+            previousDate
+              ? 'cursor-pointer hover:bg-hover-bg hover:border-accent hover:-translate-y-px'
+              : 'opacity-30 cursor-not-allowed'
+          }`}
+          aria-label="Previous day"
+        >
           ← Previous Day
-        </span>
+        </button>
         
         <div className="text-center">
           <h1
@@ -86,12 +132,18 @@ export default function DailyHeader({
           </div>
         </div>
         
-        <a
-          href="/day/2025-07-28"
-          className="px-4 py-2 bg-bg-tertiary border border-border rounded text-text-primary no-underline text-sm font-medium transition-all flex items-center gap-1.5 hover:bg-hover-bg hover:border-accent hover:-translate-y-px"
+        <button
+          onClick={handleNextDay}
+          disabled={!nextDate}
+          className={`px-4 py-2 bg-bg-tertiary border border-border rounded text-text-primary text-sm font-medium flex items-center gap-1.5 transition-all ${
+            nextDate
+              ? 'cursor-pointer hover:bg-hover-bg hover:border-accent hover:-translate-y-px'
+              : 'opacity-30 cursor-not-allowed'
+          }`}
+          aria-label="Next day"
         >
           Next Day →
-        </a>
+        </button>
       </div>
 
       {showDatePicker && (

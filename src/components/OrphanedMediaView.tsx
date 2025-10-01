@@ -106,13 +106,13 @@ function MediaItemCard({
   allItems,
   onOpenLightbox,
 }: MediaItemCardProps) {
-  const fullPath = `../${item.path}`;
+  const fullPath = item.path;
 
   const handleClick = () => {
     if (item.type === 'IMAGE') {
       const mediaItems = allItems.map((i) => ({
         type: i.type,
-        path: `../${i.path}`,
+        path: i.path,
         message_id: '',
         date: '',
         sender: '',
@@ -122,7 +122,7 @@ function MediaItemCard({
     } else if (item.type === 'VIDEO') {
       const mediaItems = allItems.map((i) => ({
         type: i.type,
-        path: `../${i.path}`,
+        path: i.path,
         message_id: '',
         date: '',
         sender: '',
@@ -149,11 +149,19 @@ function MediaItemCard({
       )}
       
       {item.type === 'VIDEO' && (
-        <video
-          src={fullPath}
-          preload="metadata"
-          className="w-full h-[200px] object-cover"
-        />
+        <div className="relative">
+          <video
+            src={fullPath}
+            preload="metadata"
+            className="w-full h-[200px] object-cover"
+          />
+          {/* Play button indicator */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center border-2 border-white/80">
+              <div className="w-0 h-0 border-l-[20px] border-l-white border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent ml-1"></div>
+            </div>
+          </div>
+        </div>
       )}
       
       {item.type === 'AUDIO' && (

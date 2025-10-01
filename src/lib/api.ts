@@ -1,11 +1,14 @@
-import { DayData } from '@/types';
+import { DayData, IndexData } from '@/types';
+import { loadDayData } from './dataLoader';
+import { transformDayData } from './dataTransformer';
 
-const API_BASE = '/api';
-
-export async function fetchDayData(date: string): Promise<DayData> {
-  const response = await fetch(`${API_BASE}/day/${date}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch day data');
-  }
-  return response.json();
+/**
+ * Fetches and transforms day data for a specific date
+ */
+export async function fetchDayData(
+  date: string,
+  indexData: IndexData
+): Promise<DayData> {
+  const rawData = await loadDayData(date);
+  return transformDayData(rawData, indexData);
 }

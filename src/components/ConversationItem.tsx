@@ -1,6 +1,6 @@
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { Conversation } from '@/types';
-import { getAvatarColor } from '@/lib/utils';
+import { getAvatarColor, parseSnapchatDate } from '@/lib/utils';
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -24,13 +24,14 @@ export default function ConversationItem({ conversation }: ConversationItemProps
   
   const avatarColor = getAvatarColor(displayName);
   
-  let lastDate = 'No messages';
+  let lastTime = 'No messages';
   if (conversation.stats.date_range.last_message) {
-    const date = new Date(conversation.stats.date_range.last_message);
-    const month = date.toLocaleDateString('en-US', { month: 'short' });
-    const day = date.getDate();
-    const year = date.getFullYear();
-    lastDate = `${month} ${day}, ${year}`;
+    const date = parseSnapchatDate(conversation.stats.date_range.last_message);
+    lastTime = date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
   }
 
   return (
@@ -64,7 +65,7 @@ export default function ConversationItem({ conversation }: ConversationItemProps
             {displayName}
           </div>
           <div className="text-[13px] text-text-tertiary flex-shrink-0 ml-2">
-            {lastDate}
+            {lastTime}
           </div>
         </div>
         <div className="flex items-center gap-1.5">

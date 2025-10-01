@@ -194,11 +194,19 @@ function MediaGridItem({ item, onClick }: MediaGridItemProps) {
         />
       )}
       {item.type === 'VIDEO' && (
-        <video
-          src={item.path}
-          preload="metadata"
-          className="w-full h-full object-contain bg-black"
-        />
+        <>
+          <video
+            src={item.path}
+            preload="metadata"
+            className="w-full h-full object-contain bg-black"
+          />
+          {/* Play button indicator */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center border-2 border-white/80">
+              <div className="w-0 h-0 border-l-[20px] border-l-white border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent ml-1"></div>
+            </div>
+          </div>
+        </>
       )}
       
       <div className="absolute top-2 right-2 bg-black/70 px-2 py-1 rounded text-[11px] font-semibold text-white">

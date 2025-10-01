@@ -15,9 +15,30 @@ export function formatDate(dateStr: string): string {
   });
 }
 
+/**
+ * Parses Snapchat date format: "2025-08-24 22:33:59.302 Atlantic/Faroe"
+ * Returns a valid Date object
+ */
+export function parseSnapchatDate(dateStr: string): Date {
+  try {
+    // Extract the date/time part before the timezone
+    // Format: "YYYY-MM-DD HH:MM:SS.mmm Atlantic/Faroe"
+    const parts = dateStr.split(' ');
+    if (parts.length >= 2) {
+      // Take date and time parts, ignore timezone
+      const dateTimePart = `${parts[0]}T${parts[1]}`;
+      return new Date(dateTimePart);
+    }
+    // Fallback: try parsing as-is
+    return new Date(dateStr);
+  } catch {
+    return new Date();
+  }
+}
+
 export function formatTime(datetimeStr: string): string {
   try {
-    const dt = new Date(datetimeStr.replace(' UTC', 'Z'));
+    const dt = parseSnapchatDate(datetimeStr);
     return dt
       .toLocaleTimeString('en-US', {
         hour: '2-digit',

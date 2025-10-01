@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Conversation, MediaFilter, MediaItem } from '@/types';
+import { Conversation, MediaFilter, MediaItem, IndexData } from '@/types';
 
 interface SearchState {
   query: string;
@@ -17,6 +17,9 @@ interface LightboxState {
 }
 
 interface ArchiveStore {
+  // Index data (users, groups, account owner)
+  indexData: IndexData | null;
+  
   // Conversation state
   currentConversation: Conversation | null;
   conversations: Conversation[];
@@ -31,7 +34,11 @@ interface ArchiveStore {
   // Lightbox state
   lightboxState: LightboxState;
   
+  // Audio playback state
+  currentlyPlayingAudio: HTMLAudioElement | null;
+  
   // Actions
+  setIndexData: (data: IndexData) => void;
   setConversations: (conversations: Conversation[]) => void;
   setCurrentConversation: (conversation: Conversation | null) => void;
   setAccountUsername: (username: string) => void;
@@ -41,9 +48,11 @@ interface ArchiveStore {
   openLightbox: (src: string, type: 'image' | 'video' | 'audio', items?: MediaItem[], index?: number) => void;
   closeLightbox: () => void;
   navigateLightbox: (direction: 'prev' | 'next') => void;
+  setCurrentlyPlayingAudio: (audio: HTMLAudioElement | null) => void;
 }
 
 export const useArchiveStore = create<ArchiveStore>((set) => ({
+  indexData: null,
   currentConversation: null,
   conversations: [],
   accountUsername: null,
@@ -61,10 +70,13 @@ export const useArchiveStore = create<ArchiveStore>((set) => ({
     currentIndex: -1,
     items: [],
   },
+  currentlyPlayingAudio: null,
   
+  setIndexData: (data) => set({ indexData: data }),
   setConversations: (conversations) => set({ conversations }),
   setCurrentConversation: (conversation) => set({ currentConversation: conversation }),
   setAccountUsername: (username) => set({ accountUsername: username }),
+  setCurrentlyPlayingAudio: (audio) => set({ currentlyPlayingAudio: audio }),
   setSearchQuery: (query) => set((state) => ({
     searchState: { ...state.searchState, query },
   })),
