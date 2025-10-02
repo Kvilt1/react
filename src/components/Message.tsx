@@ -1,6 +1,7 @@
 import { Message as MessageType, Conversation } from '@/types';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { formatTime, getMediaTypeIcon, isStatusMessage } from '@/lib/utils';
+import { getUserColor } from '@/lib/colorAssignment';
 import MessageMedia from './MessageMedia';
 import SnapIndicator from './SnapIndicator';
 
@@ -22,6 +23,7 @@ export default function Message({
   isLastInGroup,
   accountUsername,
   conversation,
+  messageIndex,
   searchQuery,
 }: MessageProps) {
   const openLightbox = useArchiveStore((state) => state.openLightbox);
@@ -67,8 +69,7 @@ export default function Message({
   }
 
   const sender = message.from_user;
-  const isMe = sender === accountUsername;
-  const senderColor = isMe ? '#ff4757' : '#3498db';
+  const senderColor = getUserColor(sender, accountUsername, conversation.id);
   const senderDisplayName = getSenderDisplayName(
     sender,
     accountUsername,
@@ -133,6 +134,10 @@ export default function Message({
               message={message}
               conversation={conversation}
               onOpenLightbox={openLightbox}
+              senderColor={senderColor}
+              senderName={senderDisplayName}
+              allMessages={conversation.messages}
+              messageIndex={messageIndex}
             />
           )}
           

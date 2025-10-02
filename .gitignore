@@ -26,3 +26,4 @@ dist-ssr
 # Personal Snapchat data
 public/days/
 public/index.json
+public/bitmoji/

@@ -1,84 +1,52 @@
-import { useRef, useEffect } from 'react';
 import { Message, Conversation } from '@/types';
 import { getFileExtension, getMediaTypeIcon } from '@/lib/utils';
-import { useArchiveStore } from '@/store/useArchiveStore';
+import AudioPlayer from './AudioPlayer';
 
 interface MessageMediaProps {
   message: Message;
   conversation: Conversation;
   onOpenLightbox: (src: string, type: 'image' | 'video' | 'audio') => void;
+  senderColor?: string;
+  senderName?: string;
+  allMessages?: Message[];
+  messageIndex?: number;
 }
 
 export default function MessageMedia({
   message,
   conversation,
   onOpenLightbox,
+  senderColor = '#3498db',
+  senderName = 'Unknown',
+  allMessages = [],
+  messageIndex = -1,
 }: MessageMediaProps) {
   const mediaLocations = message.media_locations || [];
   const mediaType = message.media_type;
-  const audioRefs = useRef<(HTMLAudioElement | null)[]>([]);
-  const currentlyPlayingAudio = useArchiveStore((state) => state.currentlyPlayingAudio);
-  const setCurrentlyPlayingAudio = useArchiveStore((state) => state.setCurrentlyPlayingAudio);
-  
-  // Use a ref for immediate tracking (before state updates)
-  const isInterruptingRef = useRef(false);
 
-  const handleAudioPlay = (audioElement: HTMLAudioElement) => {
-    // Store the old audio reference if any
-    const previousAudio = currentlyPlayingAudio;
-    
-    // Mark that we're interrupting another audio
-    if (previousAudio && previousAudio !== audioElement) {
-      isInterruptingRef.current = true;
+  // Find the next voice message in the chain (same sender, consecutive NOTE messages)
+  const getNextVoiceMessage = (): string | null => {
+    if (mediaType !== 'NOTE' || messageIndex === -1 || !allMessages.length) {
+      return null;
     }
-    
-    // Set this audio as the currently playing one
-    setCurrentlyPlayingAudio(audioElement);
-    
-    // Pause and reset the previously playing audio if it's different
-    if (previousAudio && previousAudio !== audioElement) {
-      previousAudio.pause();
-      previousAudio.currentTime = 0;
-      // Reset the flag after a brief moment
-      setTimeout(() => {
-        isInterruptingRef.current = false;
-      }, 50);
+
+    const nextMessage = allMessages[messageIndex + 1];
+    if (!nextMessage) return null;
+
+    // Check if next message is from same sender and is also a NOTE
+    if (
+      nextMessage.from_user === message.from_user &&
+      nextMessage.media_type === 'NOTE' &&
+      nextMessage.media_locations &&
+      nextMessage.media_locations.length > 0
+    ) {
+      return `${conversation.dir}/${nextMessage.media_locations[0]}`;
     }
+
+    return null;
   };
 
-  const handleAudioPause = (audioElement: HTMLAudioElement) => {
-    // Don't reset if we're in the middle of switching to another audio
-    if (isInterruptingRef.current) {
-      return;
-    }
-    
-    // Only clear and reset if it's this audio that's pausing
-    if (currentlyPlayingAudio === audioElement) {
-      setCurrentlyPlayingAudio(null);
-      // Reset to start when paused
-      audioElement.currentTime = 0;
-    }
-  };
-
-  const handleAudioEnded = (audioElement: HTMLAudioElement) => {
-    // Reset to start when audio finishes playing
-    audioElement.currentTime = 0;
-    if (currentlyPlayingAudio === audioElement) {
-      setCurrentlyPlayingAudio(null);
-    }
-  };
-
-  // Cleanup: pause audio if it's playing when component unmounts
-  useEffect(() => {
-    return () => {
-      audioRefs.current.forEach((audio) => {
-        if (audio && currentlyPlayingAudio === audio) {
-          audio.pause();
-          setCurrentlyPlayingAudio(null);
-        }
-      });
-    };
-  }, [currentlyPlayingAudio, setCurrentlyPlayingAudio]);
+  const nextAudioSrc = getNextVoiceMessage();
 
   if (mediaLocations.length === 0) {
     // Show styled placeholders for different media types
@@ -145,16 +113,12 @@ export default function MessageMedia({
         
         if (mediaType === 'NOTE') {
           return (
-            <div key={idx} className="my-1">
-              <audio
-                ref={(el) => (audioRefs.current[idx] = el)}
-                controls
-                preload="none"
-                src={fullPath}
-                className="w-full max-w-[300px] h-8 outline-none"
-                onPlay={(e) => handleAudioPlay(e.currentTarget)}
-                onPause={(e) => handleAudioPause(e.currentTarget)}
-                onEnded={(e) => handleAudioEnded(e.currentTarget)}
+            <div key={idx} className="my-1 flex items-center" style={{ height: '60px', overflow: 'visible' }}>
+              <AudioPlayer
+                audioSrc={fullPath}
+                senderColor={senderColor}
+                senderName={senderName}
+                nextAudioSrc={nextAudioSrc}
               />
             </div>
           );

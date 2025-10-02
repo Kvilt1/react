@@ -25,6 +25,7 @@ export default function DailyView() {
   const setAccountUsername = useArchiveStore(
     (state) => state.setAccountUsername
   );
+  const setCurrentDate = useArchiveStore((state) => state.setCurrentDate);
 
   useKeyboardShortcuts();
 
@@ -52,7 +53,9 @@ export default function DailyView() {
       
       try {
         setLoading(true);
-        const data = await fetchDayData(date || '2025-08-24', indexData);
+        const currentDate = date || '2025-08-24';
+        setCurrentDate(currentDate); // Set the current viewing date
+        const data = await fetchDayData(currentDate, indexData);
         setDayData(data);
         setConversations(data.conversations);
 
@@ -80,7 +83,7 @@ export default function DailyView() {
     };
 
     loadData();
-  }, [date, indexData, location.state, setConversations, setCurrentConversation]);
+  }, [date, indexData, location.state, setConversations, setCurrentConversation, setCurrentDate]);
 
   if (loading) {
     return (

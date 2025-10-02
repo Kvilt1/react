@@ -45,6 +45,7 @@ export interface RawDayData {
 export interface IndexUser {
   username: string;
   display_name: string;
+  bitmoji: string;
 }
 
 export interface IndexGroup {
