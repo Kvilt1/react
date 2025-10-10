@@ -19,7 +19,10 @@ interface LightboxState {
 interface ArchiveStore {
   // Index data (users, groups, account owner)
   indexData: IndexData | null;
-  
+
+  // Available dates in the archive
+  availableDates: string[];
+
   // Conversation state
   currentConversation: Conversation | null;
   conversations: Conversation[];
@@ -43,6 +46,7 @@ interface ArchiveStore {
   
   // Actions
   setIndexData: (data: IndexData) => void;
+  setAvailableDates: (dates: string[]) => void;
   setConversations: (conversations: Conversation[]) => void;
   setCurrentConversation: (conversation: Conversation | null) => void;
   setAccountUsername: (username: string) => void;
@@ -61,6 +65,7 @@ interface ArchiveStore {
 
 export const useArchiveStore = create<ArchiveStore>((set) => ({
   indexData: null,
+  availableDates: [],
   currentConversation: null,
   conversations: [],
   accountUsername: null,
@@ -83,6 +88,7 @@ export const useArchiveStore = create<ArchiveStore>((set) => ({
   audioPlayCallbacks: new Map(),
   
   setIndexData: (data) => set({ indexData: data }),
+  setAvailableDates: (dates) => set({ availableDates: dates }),
   setConversations: (conversations) => set({ conversations }),
   setCurrentConversation: (conversation) => set({ currentConversation: conversation }),
   setAccountUsername: (username) => set({ accountUsername: username }),

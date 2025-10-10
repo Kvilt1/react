@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import DatePickerPopup from './DatePickerPopup';
-import { getAvailableDates } from '@/lib/dataLoader';
 import { useArchiveStore } from '@/store/useArchiveStore';
 
 interface DailyHeaderProps {
@@ -31,6 +30,7 @@ export default function DailyHeader({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const navigate = useNavigate();
   const currentConversation = useArchiveStore((state) => state.currentConversation);
+  const availableDateStrings = useArchiveStore((state) => state.availableDates);
   
   const dateObj = new Date(date);
   const formattedDate = dateObj.toLocaleDateString('en-US', {
@@ -40,7 +40,11 @@ export default function DailyHeader({
     day: 'numeric',
   });
 
-  const availableDates = getAvailableDates();
+  const availableDates = useMemo(() => {
+    return availableDateStrings
+      .map((dateStr) => new Date(dateStr))
+      .filter((value) => !Number.isNaN(value.getTime()));
+  }, [availableDateStrings]);
 
   // Find previous and next available dates
   const { previousDate, nextDate } = useMemo(() => {

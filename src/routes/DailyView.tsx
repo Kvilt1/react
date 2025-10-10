@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { fetchDayData } from '@/lib/api';
-import { loadIndexData } from '@/lib/dataLoader';
+import { loadAvailableDateStrings, loadIndexData } from '@/lib/dataLoader';
 import { DayData } from '@/types';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import DailyHeader from '@/components/DailyHeader';
@@ -20,7 +20,9 @@ export default function DailyView() {
   const [showOrphanedMedia, setShowOrphanedMedia] = useState(false);
   const [isMobileConversationsOpen, setIsMobileConversationsOpen] = useState(true);
   const indexData = useArchiveStore((state) => state.indexData);
+  const availableDateStrings = useArchiveStore((state) => state.availableDates);
   const setIndexData = useArchiveStore((state) => state.setIndexData);
+  const setAvailableDates = useArchiveStore((state) => state.setAvailableDates);
   const setConversations = useArchiveStore((state) => state.setConversations);
   const setCurrentConversation = useArchiveStore((state) => state.setCurrentConversation);
   const setAccountUsername = useArchiveStore(
@@ -41,6 +43,9 @@ export default function DailyView() {
           const data = await loadIndexData();
           setIndexData(data);
           setAccountUsername(data.account_owner);
+
+          const dates = await loadAvailableDateStrings(data);
+          setAvailableDates(dates);
         } catch (error) {
           console.error('Failed to load index data:', error);
         }
@@ -48,20 +53,50 @@ export default function DailyView() {
     };
 
     loadIndex();
-  }, [indexData, setIndexData, setAccountUsername]);
+  }, [indexData, setIndexData, setAccountUsername, setAvailableDates]);
+
+  useEffect(() => {
+    const ensureAvailableDates = async () => {
+      if (!indexData || availableDateStrings.length > 0) {
+        return;
+      }
+
+      try {
+        const dates = await loadAvailableDateStrings(indexData);
+        setAvailableDates(dates);
+      } catch (error) {
+        console.error('Failed to load available dates:', error);
+      }
+    };
+
+    ensureAvailableDates();
+  }, [indexData, availableDateStrings, setAvailableDates]);
 
   // Load day data when date changes
   useEffect(() => {
     const loadData = async () => {
       if (!indexData) return; // Wait for index data first
-      
+
+      const fallbackDate =
+        date || (availableDateStrings.length > 0 ? availableDateStrings[0] : undefined);
+
+      if (!fallbackDate) {
+        return;
+      }
+
       try {
         setLoading(true);
-        const currentDate = date || '2025-08-24';
-        setCurrentDate(currentDate); // Set the current viewing date
-        const data = await fetchDayData(currentDate, indexData);
+        const data = await fetchDayData(fallbackDate, indexData);
         setDayData(data);
         setConversations(data.conversations);
+        setCurrentDate(data.date);
+
+        if (!availableDateStrings.includes(data.date)) {
+          const updatedDates = Array.from(
+            new Set([...availableDateStrings, data.date])
+          ).sort((a, b) => a.localeCompare(b));
+          setAvailableDates(updatedDates);
+        }
 
         // Handle conversation selection from navigation
         const navigationState = location.state as
@@ -91,7 +126,16 @@ export default function DailyView() {
     };
 
     loadData();
-  }, [date, indexData, location.state, setConversations, setCurrentConversation, setCurrentDate]);
+  }, [
+    date,
+    indexData,
+    location.state,
+    availableDateStrings,
+    setConversations,
+    setCurrentConversation,
+    setCurrentDate,
+    setAvailableDates,
+  ]);
 
   useEffect(() => {
     if (showOrphanedMedia) {
