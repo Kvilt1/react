@@ -18,6 +18,7 @@ export default function DailyView() {
   const [dayData, setDayData] = useState<DayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showOrphanedMedia, setShowOrphanedMedia] = useState(false);
+  const [isMobileConversationsOpen, setIsMobileConversationsOpen] = useState(true);
   const indexData = useArchiveStore((state) => state.indexData);
   const setIndexData = useArchiveStore((state) => state.setIndexData);
   const setConversations = useArchiveStore((state) => state.setConversations);
@@ -26,6 +27,9 @@ export default function DailyView() {
     (state) => state.setAccountUsername
   );
   const setCurrentDate = useArchiveStore((state) => state.setCurrentDate);
+  const currentConversation = useArchiveStore(
+    (state) => state.currentConversation
+  );
 
   useKeyboardShortcuts();
 
@@ -60,7 +64,11 @@ export default function DailyView() {
         setConversations(data.conversations);
 
         // Handle conversation selection from navigation
-        const previousConversationId = (location.state as any)?.previousConversationId;
+        const navigationState = location.state as
+          | { previousConversationId?: string }
+          | null
+          | undefined;
+        const previousConversationId = navigationState?.previousConversationId;
         if (previousConversationId) {
           // Try to find the same conversation on this day
           const matchingConversation = data.conversations.find(
@@ -85,6 +93,19 @@ export default function DailyView() {
     loadData();
   }, [date, indexData, location.state, setConversations, setCurrentConversation, setCurrentDate]);
 
+  useEffect(() => {
+    if (showOrphanedMedia) {
+      setIsMobileConversationsOpen(false);
+      return;
+    }
+
+    if (currentConversation) {
+      setIsMobileConversationsOpen(false);
+    } else if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setIsMobileConversationsOpen(true);
+    }
+  }, [currentConversation, showOrphanedMedia]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-bg-primary">
@@ -101,6 +122,28 @@ export default function DailyView() {
     );
   }
 
+  const handleToggleOrphanedMedia = () => {
+    setShowOrphanedMedia((prev) => {
+      const next = !prev;
+      if (next) {
+        setIsMobileConversationsOpen(false);
+      }
+      return next;
+    });
+  };
+
+  const handleMobileConversationToggle = () => {
+    setIsMobileConversationsOpen((prev) => !prev);
+  };
+
+  const handleMobileConversationOpen = () => {
+    setIsMobileConversationsOpen(true);
+  };
+
+  const handleConversationSelected = () => {
+    setIsMobileConversationsOpen(false);
+  };
+
   return (
     <div className="h-screen flex flex-col bg-bg-primary overflow-hidden">
       <DailyHeader
@@ -108,16 +151,36 @@ export default function DailyView() {
         stats={dayData.stats}
         orphanedCount={dayData.orphanedMedia?.orphaned_media_count || 0}
         showOrphanedMedia={showOrphanedMedia}
-        onToggleOrphanedMedia={() => setShowOrphanedMedia(!showOrphanedMedia)}
+        onToggleOrphanedMedia={handleToggleOrphanedMedia}
+        onToggleMobileConversations={
+          showOrphanedMedia ? undefined : handleMobileConversationToggle
+        }
+        isMobileConversationsOpen={
+          !showOrphanedMedia && isMobileConversationsOpen
+        }
       />
-      <div className="flex flex-1 overflow-hidden pt-[80px]">
-        {!showOrphanedMedia ? (
-          <>
-            <ConversationList />
-            <MainContent />
-          </>
-        ) : (
-          <OrphanedMediaView orphanedMedia={dayData.orphanedMedia} />
+      <div className="flex-1 relative overflow-hidden pt-[124px] md:pt-[80px]">
+        <div className="h-full">
+          {!showOrphanedMedia ? (
+            <div className="flex h-full overflow-hidden">
+              <div className="hidden md:flex">
+                <ConversationList onConversationSelected={handleConversationSelected} />
+              </div>
+              <div className="flex-1 flex">
+                <MainContent onOpenMobileConversations={handleMobileConversationOpen} />
+              </div>
+            </div>
+          ) : (
+            <div className="h-full overflow-y-auto">
+              <OrphanedMediaView orphanedMedia={dayData.orphanedMedia} />
+            </div>
+          )}
+        </div>
+
+        {isMobileConversationsOpen && !showOrphanedMedia && (
+          <div className="md:hidden absolute inset-0 bg-bg-secondary border-t border-border z-30 flex flex-col">
+            <ConversationList onConversationSelected={handleConversationSelected} />
+          </div>
         )}
       </div>
       <Lightbox />

@@ -3,7 +3,13 @@ import { useArchiveStore } from '@/store/useArchiveStore';
 import ChatWindow from './ChatWindow';
 import MediaGallery from './MediaGallery';
 
-export default function MainContent() {
+interface MainContentProps {
+  onOpenMobileConversations?: () => void;
+}
+
+export default function MainContent({
+  onOpenMobileConversations,
+}: MainContentProps) {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const currentConversation = useArchiveStore(
     (state) => state.currentConversation
@@ -19,6 +25,14 @@ export default function MainContent() {
         <div className="flex-1 flex items-center justify-center flex-col text-text-tertiary">
           <div className="text-6xl mb-4 opacity-50">💬</div>
           <div className="text-lg font-medium">Select a conversation to view</div>
+          {onOpenMobileConversations && (
+            <button
+              className="mt-6 md:hidden px-5 py-2 rounded-full bg-accent text-bg-primary text-sm font-semibold shadow-lg shadow-black/20 transition-all hover:-translate-y-0.5"
+              onClick={onOpenMobileConversations}
+            >
+              Browse conversations
+            </button>
+          )}
         </div>
       </div>
     );
@@ -31,6 +45,7 @@ export default function MainContent() {
           conversation={currentConversation}
           isGalleryOpen={isGalleryOpen}
           onToggleGallery={toggleGallery}
+          onBackToList={onOpenMobileConversations}
         />
       </div>
       

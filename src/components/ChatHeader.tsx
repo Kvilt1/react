@@ -1,16 +1,18 @@
 import { Conversation } from '@/types';
-import { Grid3x3 } from 'lucide-react';
+import { ArrowLeft, Grid3x3 } from 'lucide-react';
 
 interface ChatHeaderProps {
   conversation: Conversation;
   isGalleryOpen: boolean;
   onToggleGallery: () => void;
+  onBackToList?: () => void;
 }
 
 export default function ChatHeader({
   conversation,
   isGalleryOpen,
   onToggleGallery,
+  onBackToList,
 }: ChatHeaderProps) {
   const participant = conversation.metadata.participants[0];
   const title =
@@ -22,22 +24,33 @@ export default function ChatHeader({
 
   return (
     <div className="px-5 py-5 bg-bg-secondary border-b border-border flex-shrink-0 z-10">
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="text-lg font-semibold text-text-primary mb-1">
-            {title}
-          </h3>
-          {conversation.type === 'group' && (
-            <div className="text-[13px] text-text-secondary mb-2">
-              {conversation.metadata.participants.length} participants:{' '}
-              {conversation.metadata.participants
-                .map((p) => p.display_name || p.username)
-                .join(', ')}
-            </div>
+      <div className="flex justify-between items-start gap-4">
+        <div className="flex items-start gap-3">
+          {onBackToList && (
+            <button
+              className="md:hidden w-10 h-10 rounded-lg flex items-center justify-center bg-bg-tertiary text-text-secondary border border-border cursor-pointer transition-all hover:bg-hover-bg hover:text-text-primary"
+              onClick={onBackToList}
+              aria-label="Back to conversations"
+            >
+              <ArrowLeft size={20} />
+            </button>
           )}
-          <span className="text-sm text-text-secondary">
-            {conversation.stats.message_count} messages
-          </span>
+          <div>
+            <h3 className="text-lg font-semibold text-text-primary mb-1">
+              {title}
+            </h3>
+            {conversation.type === 'group' && (
+              <div className="text-[13px] text-text-secondary mb-2">
+                {conversation.metadata.participants.length} participants:{' '}
+                {conversation.metadata.participants
+                  .map((p) => p.display_name || p.username)
+                  .join(', ')}
+              </div>
+            )}
+            <span className="text-sm text-text-secondary">
+              {conversation.stats.message_count} messages
+            </span>
+          </div>
         </div>
         <button
           className={`w-10 h-10 rounded-lg flex items-center justify-center cursor-pointer transition-all border ${

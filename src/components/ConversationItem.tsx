@@ -12,9 +12,13 @@ import VideoReceivedIcon from '@/assets/icons/video-received.svg?react';
 
 interface ConversationItemProps {
   conversation: Conversation;
+  onConversationSelected?: () => void;
 }
 
-export default function ConversationItem({ conversation }: ConversationItemProps) {
+export default function ConversationItem({
+  conversation,
+  onConversationSelected,
+}: ConversationItemProps) {
   const currentConversation = useArchiveStore((state) => state.currentConversation);
   const setCurrentConversation = useArchiveStore(
     (state) => state.setCurrentConversation
@@ -115,7 +119,10 @@ export default function ConversationItem({ conversation }: ConversationItemProps
       className={`flex items-center px-3 py-2 cursor-pointer transition-colors border-b border-[#696969] gap-2.5 ${
         isActive ? 'bg-bg-tertiary' : 'hover:bg-hover-bg'
       }`}
-      onClick={() => setCurrentConversation(conversation)}
+      onClick={() => {
+        setCurrentConversation(conversation);
+        onConversationSelected?.();
+      }}
       role="button"
       tabIndex={0}
       aria-label={`Open conversation with ${displayName}`}
@@ -123,6 +130,7 @@ export default function ConversationItem({ conversation }: ConversationItemProps
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           setCurrentConversation(conversation);
+          onConversationSelected?.();
         }
       }}
     >

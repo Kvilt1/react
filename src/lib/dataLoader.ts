@@ -1,25 +1,59 @@
 import { IndexData, RawDayData } from '@/types';
+import {
+  MOCK_AVAILABLE_DATES,
+  MOCK_DAY_DATA_BY_DATE,
+  MOCK_INDEX_DATA,
+} from '@/mocks/mockArchiveData';
 
 /**
  * Loads the index.json file containing all users and groups
  */
 export async function loadIndexData(): Promise<IndexData> {
-  const response = await fetch('/index.json');
-  if (!response.ok) {
-    throw new Error('Failed to load index data');
+  try {
+    const response = await fetch('/index.json');
+    if (!response.ok) {
+      throw new Error(`Failed to load index data: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.warn('Using mock index data due to load failure.', error);
+    return MOCK_INDEX_DATA;
   }
-  return response.json();
 }
 
 /**
  * Loads conversation data for a specific date
  */
 export async function loadDayData(date: string): Promise<RawDayData> {
-  const response = await fetch(`/days/${date}/conversations.json`);
-  if (!response.ok) {
-    throw new Error(`Failed to load data for ${date}`);
+  try {
+    const response = await fetch(`/days/${date}/conversations.json`);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to load data for ${date}: ${response.status}`
+      );
+    }
+    return await response.json();
+  } catch (error) {
+    const mockData = MOCK_DAY_DATA_BY_DATE[date];
+    if (mockData) {
+      console.warn(
+        `Using mock day data for ${date} due to load failure.`,
+        error
+      );
+      return mockData;
+    }
+
+    const fallbackMock = MOCK_DAY_DATA_BY_DATE[MOCK_AVAILABLE_DATES[0]];
+    if (fallbackMock) {
+      console.warn(
+        `No data found for ${date}. Falling back to mock data for ${fallbackMock.date}.`,
+        error
+      );
+      return fallbackMock;
+    }
+
+    throw error;
   }
-  return response.json();
 }
 
 /**
@@ -44,5 +78,8 @@ export function getAvailableDates(): Date[] {
     '2025-09-05',
   ];
 
-  return dateStrings.map((dateStr) => new Date(dateStr));
+  const uniqueDates = new Set(dateStrings);
+  MOCK_AVAILABLE_DATES.forEach((dateStr) => uniqueDates.add(dateStr));
+
+  return Array.from(uniqueDates).map((dateStr) => new Date(dateStr));
 }

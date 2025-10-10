@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 import DatePickerPopup from './DatePickerPopup';
 import { getAvailableDates } from '@/lib/dataLoader';
 import { useArchiveStore } from '@/store/useArchiveStore';
@@ -14,6 +15,8 @@ interface DailyHeaderProps {
   orphanedCount: number;
   showOrphanedMedia: boolean;
   onToggleOrphanedMedia: () => void;
+  onToggleMobileConversations?: () => void;
+  isMobileConversationsOpen?: boolean;
 }
 
 export default function DailyHeader({
@@ -22,6 +25,8 @@ export default function DailyHeader({
   orphanedCount,
   showOrphanedMedia,
   onToggleOrphanedMedia,
+  onToggleMobileConversations,
+  isMobileConversationsOpen,
 }: DailyHeaderProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const navigate = useNavigate();
@@ -72,78 +77,84 @@ export default function DailyHeader({
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[100] bg-bg-secondary border-b border-border px-5 py-3 flex items-center justify-center min-h-[80px]">
-      <div className="flex items-center gap-5">
-        <button
-          onClick={handlePreviousDay}
-          disabled={!previousDate}
-          className={`px-4 py-2 bg-bg-tertiary border border-border rounded text-text-primary text-sm font-medium flex items-center gap-1.5 transition-all ${
-            previousDate
-              ? 'cursor-pointer hover:bg-hover-bg hover:border-accent hover:-translate-y-px'
-              : 'opacity-30 cursor-not-allowed'
-          }`}
-          aria-label="Previous day"
-        >
-          ← Previous Day
-        </button>
-        
-        <div className="text-center">
-          <h1
-            className="text-xl text-accent m-0 font-semibold cursor-pointer hover:underline transition-all"
-            onClick={() => setShowDatePicker(true)}
-            role="button"
-            tabIndex={0}
-            aria-label="Open date picker"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setShowDatePicker(true);
-              }
-            }}
+    <div className="fixed top-0 left-0 right-0 z-[100] bg-bg-secondary border-b border-border px-4 md:px-5 py-3 flex items-center justify-center">
+      <div className="w-full max-w-5xl flex flex-col gap-3 md:flex-row md:items-center md:justify-center">
+        <div className="flex items-center justify-between gap-3 md:gap-5">
+          <div className="flex items-center gap-3">
+            {onToggleMobileConversations && (
+              <button
+                className="md:hidden w-10 h-10 rounded-full border border-border bg-bg-tertiary text-text-secondary flex items-center justify-center transition-all hover:bg-hover-bg hover:text-text-primary"
+                onClick={onToggleMobileConversations}
+                aria-label={
+                  isMobileConversationsOpen ? 'Hide conversations list' : 'Show conversations list'
+                }
+              >
+                {isMobileConversationsOpen ? <X size={18} /> : <Menu size={18} />}
+              </button>
+            )}
+            <button
+              onClick={handlePreviousDay}
+              disabled={!previousDate}
+              className={`px-4 py-2 bg-bg-tertiary border border-border rounded text-text-primary text-sm font-medium flex items-center gap-1.5 transition-all ${
+                previousDate
+                  ? 'cursor-pointer hover:bg-hover-bg hover:border-accent hover:-translate-y-px'
+                  : 'opacity-30 cursor-not-allowed'
+              }`}
+              aria-label="Previous day"
+            >
+              ← Previous
+            </button>
+          </div>
+          <button
+            onClick={handleNextDay}
+            disabled={!nextDate}
+            className={`px-4 py-2 bg-bg-tertiary border border-border rounded text-text-primary text-sm font-medium flex items-center gap-1.5 transition-all ${
+              nextDate
+                ? 'cursor-pointer hover:bg-hover-bg hover:border-accent hover:-translate-y-px'
+                : 'opacity-30 cursor-not-allowed'
+            }`}
+            aria-label="Next day"
           >
-            {formattedDate}
+            Next →
+          </button>
+        </div>
+
+        <div className="text-center flex flex-col items-center md:min-w-[360px]">
+          <h1 className="text-lg md:text-xl text-accent m-0 font-semibold">
+            <button
+              type="button"
+              className="bg-transparent border-none p-0 m-0 text-inherit font-inherit cursor-pointer hover:underline transition-all focus:outline-none"
+              onClick={() => setShowDatePicker(true)}
+              aria-label="Open date picker"
+            >
+              {formattedDate}
+            </button>
           </h1>
-          <div className="text-xs text-text-secondary mt-1">
+          <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-1 text-[11px] md:text-xs text-text-secondary mt-1">
             <span>{stats.conversationCount} conversations</span>
-            <span className="mx-2">•</span>
+            <span className="text-text-secondary/70">•</span>
             <span>{stats.messageCount} messages</span>
-            <span className="mx-2">•</span>
+            <span className="text-text-secondary/70">•</span>
             <span>{stats.mediaCount} media</span>
             {orphanedCount > 0 && (
-              <>
-                <span className="mx-2">•</span>
-                <button
-                  className={`border-none px-3 py-1 rounded-2xl text-xs cursor-pointer transition-all font-medium ${
-                    showOrphanedMedia
-                      ? 'bg-accent text-bg-primary'
-                      : 'bg-snap-purple text-white hover:bg-[#8b41ff] hover:-translate-y-px'
-                  }`}
-                  onClick={onToggleOrphanedMedia}
-                  aria-label={
-                    showOrphanedMedia
-                      ? 'Close orphaned media'
-                      : `View ${orphanedCount} orphaned media items`
-                  }
-                >
-                  📷 Orphaned Media ({orphanedCount})
-                </button>
-              </>
+              <button
+                className={`border-none px-3 py-1 rounded-2xl text-[11px] md:text-xs cursor-pointer transition-all font-medium whitespace-nowrap ${
+                  showOrphanedMedia
+                    ? 'bg-accent text-bg-primary'
+                    : 'bg-snap-purple text-white hover:bg-[#8b41ff] hover:-translate-y-px'
+                }`}
+                onClick={onToggleOrphanedMedia}
+                aria-label={
+                  showOrphanedMedia
+                    ? 'Close orphaned media'
+                    : `View ${orphanedCount} orphaned media items`
+                }
+              >
+                📷 Orphaned Media ({orphanedCount})
+              </button>
             )}
           </div>
         </div>
-        
-        <button
-          onClick={handleNextDay}
-          disabled={!nextDate}
-          className={`px-4 py-2 bg-bg-tertiary border border-border rounded text-text-primary text-sm font-medium flex items-center gap-1.5 transition-all ${
-            nextDate
-              ? 'cursor-pointer hover:bg-hover-bg hover:border-accent hover:-translate-y-px'
-              : 'opacity-30 cursor-not-allowed'
-          }`}
-          aria-label="Next day"
-        >
-          Next Day →
-        </button>
       </div>
 
       {showDatePicker && (
