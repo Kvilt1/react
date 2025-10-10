@@ -14,10 +14,20 @@ export async function loadIndexData(): Promise<IndexData> {
     if (!response.ok) {
       throw new Error(`Failed to load index data: ${response.status}`);
     }
-    return await response.json();
+
+    const data = (await response.json()) as IndexData;
+
+    if (!data || !data.users?.length || !data.account_owner) {
+      console.warn(
+        'Loaded index.json but it did not contain any users. Falling back to mock index data for development.'
+      );
+      return structuredCloneIndexData(MOCK_INDEX_DATA);
+    }
+
+    return data;
   } catch (error) {
     console.warn('Using mock index data due to load failure.', error);
-    return MOCK_INDEX_DATA;
+    return structuredCloneIndexData(MOCK_INDEX_DATA);
   }
 }
 
@@ -32,28 +42,66 @@ export async function loadDayData(date: string): Promise<RawDayData> {
         `Failed to load data for ${date}: ${response.status}`
       );
     }
-    return await response.json();
+
+    const data = (await response.json()) as RawDayData | null;
+
+    if (!hasConversationPayload(data)) {
+      const mockData = resolveMockDayData(date);
+      if (mockData) {
+        console.warn(
+          `Loaded conversations.json for ${date} but it did not contain any conversations. Falling back to mock data for ${mockData.date}.`
+        );
+        return mockData;
+      }
+
+      throw new Error(`Day data for ${date} is empty.`);
+    }
+
+    return data;
   } catch (error) {
-    const mockData = MOCK_DAY_DATA_BY_DATE[date];
+    const mockData = resolveMockDayData(date);
     if (mockData) {
       console.warn(
-        `Using mock day data for ${date} due to load failure.`,
+        `Using mock day data for ${mockData.date} due to load failure for ${date}.`,
         error
       );
       return mockData;
     }
 
-    const fallbackMock = MOCK_DAY_DATA_BY_DATE[MOCK_AVAILABLE_DATES[0]];
-    if (fallbackMock) {
-      console.warn(
-        `No data found for ${date}. Falling back to mock data for ${fallbackMock.date}.`,
-        error
-      );
-      return fallbackMock;
-    }
-
     throw error;
   }
+}
+
+function hasConversationPayload(data: RawDayData | null): data is RawDayData {
+  return !!(
+    data &&
+    Array.isArray(data.conversations) &&
+    data.conversations.length > 0 &&
+    typeof data.date === 'string'
+  );
+}
+
+function resolveMockDayData(date: string): RawDayData | null {
+  const mockByExactDate = MOCK_DAY_DATA_BY_DATE[date];
+  if (mockByExactDate) {
+    return structuredCloneDayData(mockByExactDate);
+  }
+
+  const fallbackDate = MOCK_AVAILABLE_DATES[0];
+  if (!fallbackDate) {
+    return null;
+  }
+
+  const fallbackMock = MOCK_DAY_DATA_BY_DATE[fallbackDate];
+  return fallbackMock ? structuredCloneDayData(fallbackMock) : null;
+}
+
+function structuredCloneDayData(data: RawDayData): RawDayData {
+  return JSON.parse(JSON.stringify(data));
+}
+
+function structuredCloneIndexData(data: IndexData): IndexData {
+  return JSON.parse(JSON.stringify(data));
 }
 
 /**
