@@ -14,16 +14,21 @@ interface ConversationItemProps {
   conversation: Conversation;
 }
 
-export default function ConversationItem({ conversation }: ConversationItemProps) {
-  const currentConversation = useArchiveStore((state) => state.currentConversation);
+export default function ConversationItem({
+  conversation,
+}: ConversationItemProps) {
+  const currentConversation = useArchiveStore(
+    (state) => state.currentConversation
+  );
   const setCurrentConversation = useArchiveStore(
     (state) => state.setCurrentConversation
   );
+  const setMobileView = useArchiveStore((state) => state.setMobileView);
   const accountUsername = useArchiveStore((state) => state.accountUsername);
   const indexData = useArchiveStore((state) => state.indexData);
   const currentDate = useArchiveStore((state) => state.currentDate);
   const [bitmojiError, setBitmojiError] = useState(false);
-  
+
   const isActive = currentConversation?.id === conversation.id;
   
   const participant = conversation.metadata.participants[0];
@@ -82,16 +87,16 @@ export default function ConversationItem({ conversation }: ConversationItemProps
   // Determine status text and icon based on latest message
   const getStatusIcon = () => {
     if (!lastMessage) return null;
-    
+
     const isSent = lastMessage.is_sender;
     const messageType = lastMessage.message_type;
     const mediaType = lastMessage.media_type;
-    
+
     // If message type is 'message', always use chat icons
     if (messageType === 'message') {
       return isSent ? <ChatSentIcon /> : <ChatReceivedIcon />;
     }
-    
+
     // If message type is 'snap'
     if (messageType === 'snap') {
       // If media_type is VIDEO, use video icons
@@ -101,28 +106,35 @@ export default function ConversationItem({ conversation }: ConversationItemProps
       // If media_type is IMAGE (or other), use snap icons
       return isSent ? <SnapSentIcon /> : <SnapReceivedIcon />;
     }
-    
+
     // Default fallback to chat icons
     return isSent ? <ChatSentIcon /> : <ChatReceivedIcon />;
   };
-  
-  const statusText = lastMessage 
-    ? (lastMessage.is_sender ? 'Opened' : 'Received')
+
+  const statusText = lastMessage
+    ? lastMessage.is_sender
+      ? 'Opened'
+      : 'Received'
     : 'No messages';
+
+  const handleSelectConversation = () => {
+    setCurrentConversation(conversation);
+    setMobileView('chat');
+  };
 
   return (
     <div
       className={`flex items-center px-3 py-2 cursor-pointer transition-colors border-b border-[#696969] gap-2.5 ${
         isActive ? 'bg-bg-tertiary' : 'hover:bg-hover-bg'
       }`}
-      onClick={() => setCurrentConversation(conversation)}
+      onClick={handleSelectConversation}
       role="button"
       tabIndex={0}
       aria-label={`Open conversation with ${displayName}`}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          setCurrentConversation(conversation);
+          handleSelectConversation();
         }
       }}
     >

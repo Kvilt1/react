@@ -16,18 +16,23 @@ interface LightboxState {
   items: MediaItem[];
 }
 
+type MobileView = 'list' | 'chat';
+
 interface ArchiveStore {
   // Index data (users, groups, account owner)
   indexData: IndexData | null;
-  
+
   // Conversation state
   currentConversation: Conversation | null;
   conversations: Conversation[];
   accountUsername: string | null;
-  
+
   // Current viewing date (for relative time calculations)
   currentDate: string | null;
-  
+
+  // Mobile view state
+  mobileView: MobileView;
+
   // Search state
   searchState: SearchState;
   
@@ -47,6 +52,7 @@ interface ArchiveStore {
   setCurrentConversation: (conversation: Conversation | null) => void;
   setAccountUsername: (username: string) => void;
   setCurrentDate: (date: string) => void;
+  setMobileView: (view: MobileView) => void;
   setSearchQuery: (query: string) => void;
   setSearchResults: (results: HTMLElement[], currentIndex: number) => void;
   setMediaFilter: (filter: MediaFilter) => void;
@@ -65,6 +71,7 @@ export const useArchiveStore = create<ArchiveStore>((set) => ({
   conversations: [],
   accountUsername: null,
   currentDate: null,
+  mobileView: 'list',
   searchState: {
     query: '',
     results: [],
@@ -84,11 +91,14 @@ export const useArchiveStore = create<ArchiveStore>((set) => ({
   
   setIndexData: (data) => set({ indexData: data }),
   setConversations: (conversations) => set({ conversations }),
-  setCurrentConversation: (conversation) => set({ currentConversation: conversation }),
+  setCurrentConversation: (conversation) =>
+    set({ currentConversation: conversation }),
   setAccountUsername: (username) => set({ accountUsername: username }),
   setCurrentDate: (date) => set({ currentDate: date }),
+  setMobileView: (view) => set({ mobileView: view }),
   setCurrentlyPlayingAudio: (audio) => set({ currentlyPlayingAudio: audio }),
-  setSearchQuery: (query) => set((state) => ({
+  setSearchQuery: (query) =>
+    set((state) => ({
     searchState: { ...state.searchState, query },
   })),
   setSearchResults: (results, currentIndex) => set((state) => ({

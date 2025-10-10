@@ -28,21 +28,7 @@ export async function loadDayData(date: string): Promise<RawDayData> {
  */
 export function getAvailableDates(): Date[] {
   // These are the dates we have in the public/days folder
-  const dateStrings = [
-    '2025-08-24',
-    '2025-08-25',
-    '2025-08-26',
-    '2025-08-27',
-    '2025-08-28',
-    '2025-08-29',
-    '2025-08-30',
-    '2025-08-31',
-    '2025-09-01',
-    '2025-09-02',
-    '2025-09-03',
-    '2025-09-04',
-    '2025-09-05',
-  ];
+  const dateStrings = ['2025-08-24'];
 
   return dateStrings.map((dateStr) => new Date(dateStr));
 }

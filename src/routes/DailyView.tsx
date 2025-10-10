@@ -11,6 +11,7 @@ import Lightbox from '@/components/Lightbox';
 import OrphanedMediaView from '@/components/OrphanedMediaView';
 import KeyboardHint from '@/components/KeyboardHint';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { cn } from '@/lib/utils';
 
 export default function DailyView() {
   const { date } = useParams<{ date: string }>();
@@ -21,11 +22,14 @@ export default function DailyView() {
   const indexData = useArchiveStore((state) => state.indexData);
   const setIndexData = useArchiveStore((state) => state.setIndexData);
   const setConversations = useArchiveStore((state) => state.setConversations);
-  const setCurrentConversation = useArchiveStore((state) => state.setCurrentConversation);
+  const setCurrentConversation = useArchiveStore(
+    (state) => state.setCurrentConversation
+  );
   const setAccountUsername = useArchiveStore(
     (state) => state.setAccountUsername
   );
   const setCurrentDate = useArchiveStore((state) => state.setCurrentDate);
+  const mobileView = useArchiveStore((state) => state.mobileView);
 
   useKeyboardShortcuts();
 
@@ -110,11 +114,25 @@ export default function DailyView() {
         showOrphanedMedia={showOrphanedMedia}
         onToggleOrphanedMedia={() => setShowOrphanedMedia(!showOrphanedMedia)}
       />
-      <div className="flex flex-1 overflow-hidden pt-[80px]">
+      <div className="flex flex-1 overflow-hidden pt-[80px] md:pt-[68px]">
         {!showOrphanedMedia ? (
           <>
-            <ConversationList />
-            <MainContent />
+            <div
+              className={cn('h-full md:block', {
+                block: mobileView === 'list',
+                hidden: mobileView === 'chat',
+              })}
+            >
+              <ConversationList />
+            </div>
+            <div
+              className={cn('h-full md:block', {
+                block: mobileView === 'chat',
+                hidden: mobileView === 'list',
+              })}
+            >
+              <MainContent />
+            </div>
           </>
         ) : (
           <OrphanedMediaView orphanedMedia={dayData.orphanedMedia} />

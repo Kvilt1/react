@@ -48,7 +48,7 @@ export default function MessageList({
       ref={wrapperRef}
       className="flex-1 overflow-y-auto overflow-x-hidden relative custom-scrollbar"
     >
-      <div className="p-5 min-h-full">
+      <div className="px-3 md:px-5 py-2 min-h-full">
         {conversation.messages.map((message, index) => {
           const messageDate = message.created.split(' ')[0];
           const showDateDivider = messageDate !== currentDate;

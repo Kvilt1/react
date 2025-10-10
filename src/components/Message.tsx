@@ -62,7 +62,7 @@ export default function Message({
     }
     
     return (
-      <div className="italic text-text-tertiary text-center py-2 text-[13px]">
+      <div className="italic text-text-tertiary text-center py-1.5 md:py-2 text-[13px]">
         {statusText}
       </div>
     );
@@ -79,7 +79,7 @@ export default function Message({
   const messageClasses = [
     'message',
     'block',
-    showSender ? 'mt-3 mb-0' : 'mt-0 mb-0',
+    showSender ? 'mt-2 md:mt-3 mb-0' : 'mt-0 mb-0',
     isLastInGroup ? 'mb-2' : '',
   ].join(' ');
 
@@ -103,15 +103,15 @@ export default function Message({
     <div className={messageClasses}>
       {showSender && (
         <div
-          className="text-[13px] font-semibold mb-0.5 mt-3"
+          className="text-[13px] font-semibold mb-0.5 mt-2 md:mt-3"
           style={{ color: senderColor }}
         >
           {senderDisplayName}
         </div>
       )}
-      
+
       <div
-        className="relative pl-3 flex items-start gap-3 w-full"
+        className="relative pl-2 md:pl-3 flex items-start gap-2 md:gap-3 w-full"
         style={{ color: senderColor }}
       >
         <div
@@ -121,7 +121,7 @@ export default function Message({
             bottom: isLastInGroup ? 0 : '-2px',
           }}
         ></div>
-        
+
         <div className="flex-1 min-w-0">
           {/* Handle media and snaps */}
           {message.message_type === 'snap' &&

@@ -26,21 +26,19 @@ export default function MainContent() {
 
   return (
     <div className="flex-1 flex flex-col bg-bg-primary relative overflow-hidden">
-      <div className={!isGalleryOpen ? 'flex-1 flex flex-col overflow-hidden' : 'hidden'}>
-        <ChatWindow
-          conversation={currentConversation}
-          isGalleryOpen={isGalleryOpen}
-          onToggleGallery={toggleGallery}
-        />
-      </div>
-      
-      <div className={isGalleryOpen ? 'flex-1 flex flex-col overflow-hidden' : 'hidden'}>
+      {isGalleryOpen ? (
         <MediaGallery
           conversation={currentConversation}
           isGalleryOpen={isGalleryOpen}
           onToggleGallery={toggleGallery}
         />
-      </div>
+      ) : (
+        <ChatWindow
+          conversation={currentConversation}
+          isGalleryOpen={isGalleryOpen}
+          onToggleGallery={toggleGallery}
+        />
+      )}
     </div>
   );
 }

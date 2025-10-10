@@ -17,8 +17,15 @@ export function transformDayData(
   rawData: RawDayData,
   indexData: IndexData
 ): DayData {
+  // Create lookup maps for efficient access
+  const userMap = new Map(
+    indexData.users.map((u) => [u.username, u.display_name])
+  );
+  const groupMap = new Map(indexData.groups.map((g) => [g.group_id, g]));
+  const groupNameMap = new Map(indexData.groups.map((g) => [g.name, g]));
+
   const conversations = rawData.conversations.map((rawConv) =>
-    transformConversation(rawConv, indexData, rawData.date)
+    transformConversation(rawConv, { userMap, groupMap, groupNameMap }, rawData.date)
   );
 
   const orphanedMedia: OrphanedMedia | null = rawData.orphanedMedia
@@ -46,14 +53,18 @@ export function transformDayData(
  */
 function transformConversation(
   rawConv: RawConversation,
-  indexData: IndexData,
+  maps: {
+    userMap: Map<string, string>;
+    groupMap: Map<string, any>;
+    groupNameMap: Map<string, any>;
+  },
   date: string
 ): Conversation {
   const isGroup = rawConv.conversation_type === 'group';
   const messages = rawConv.messages.map((msg) => transformMessage(msg));
 
   // Build participant list
-  const participants = buildParticipants(rawConv, indexData);
+  const participants = buildParticipants(rawConv, maps);
 
   // Calculate stats
   const stats = {
@@ -111,57 +122,40 @@ function transformMessage(rawMsg: RawMessage): Message {
  */
 function buildParticipants(
   rawConv: RawConversation,
-  indexData: IndexData
+  maps: {
+    userMap: Map<string, string>;
+    groupMap: Map<string, any>;
+    groupNameMap: Map<string, any>;
+  }
 ): Participant[] {
-  if (rawConv.conversation_type === 'individual') {
-    // For individual chats, the conversation_id is the username
-    const username = rawConv.conversation_id;
-    const user = indexData.users.find((u) => u.username === username);
+  const { userMap, groupMap, groupNameMap } = maps;
 
-    if (user) {
-      return [
-        {
-          username: user.username,
-          display_name: user.display_name,
-        },
-      ];
+  if (rawConv.conversation_type === 'individual') {
+    const username = rawConv.conversation_id;
+    const displayName = userMap.get(username);
+
+    if (displayName) {
+      return [{ username, display_name: displayName }];
     }
 
-    // User not found in index
-    return [
-      {
-        username: username,
-        display_name: 'NOT FOUND IN FRIENDS LIST',
-      },
-    ];
+    return [{ username, display_name: 'NOT FOUND IN FRIENDS LIST' }];
   } else {
     // For group chats, find the group and get all members
-    const group = indexData.groups.find(
-      (g) => g.group_id === rawConv.id || g.name === rawConv.group_name
-    );
+    const group =
+      groupMap.get(rawConv.id) || groupNameMap.get(rawConv.group_name || '');
 
     if (group) {
-      return group.members.map((memberUsername) => {
-        const user = indexData.users.find((u) => u.username === memberUsername);
-        return {
-          username: memberUsername,
-          display_name: user?.display_name || memberUsername,
-        };
-      });
+      return group.members.map((username: string) => ({
+        username,
+        display_name: userMap.get(username) || username,
+      }));
     }
 
     // Group not found, extract unique participants from messages
-    const uniqueUsers = new Set<string>();
-    rawConv.messages.forEach((msg) => {
-      uniqueUsers.add(msg.From);
-    });
-
-    return Array.from(uniqueUsers).map((username) => {
-      const user = indexData.users.find((u) => u.username === username);
-      return {
-        username,
-        display_name: user?.display_name || username,
-      };
-    });
+    const uniqueUsernames = new Set(rawConv.messages.map((msg) => msg.From));
+    return Array.from(uniqueUsernames).map((username) => ({
+      username,
+      display_name: userMap.get(username) || username,
+    }));
   }
 }

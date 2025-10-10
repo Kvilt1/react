@@ -16,7 +16,7 @@ export default function ConversationList() {
   });
 
   return (
-    <div className="w-[350px] bg-bg-secondary border-r border-border flex flex-col overflow-hidden">
+    <div className="w-full md:w-[350px] bg-bg-secondary md:border-r md:border-border flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto py-2 sidebar-scrollbar">
         {sortedConversations.map((conversation) => (
           <ConversationItem key={conversation.id} conversation={conversation} />
