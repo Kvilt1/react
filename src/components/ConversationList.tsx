@@ -2,7 +2,13 @@ import { useArchiveStore } from '@/store/useArchiveStore';
 import ConversationItem from './ConversationItem';
 import { parseSnapchatDate } from '@/lib/utils';
 
-export default function ConversationList() {
+interface ConversationListProps {
+  onConversationSelected?: () => void;
+}
+
+export default function ConversationList({
+  onConversationSelected,
+}: ConversationListProps) {
   const conversations = useArchiveStore((state) => state.conversations);
 
   const sortedConversations = [...conversations].sort((a, b) => {
@@ -16,10 +22,14 @@ export default function ConversationList() {
   });
 
   return (
-    <div className="w-[350px] bg-bg-secondary border-r border-border flex flex-col overflow-hidden">
+    <div className="h-full w-full md:w-[350px] bg-bg-secondary border-r border-border flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto py-2 sidebar-scrollbar">
         {sortedConversations.map((conversation) => (
-          <ConversationItem key={conversation.id} conversation={conversation} />
+          <ConversationItem
+            key={conversation.id}
+            conversation={conversation}
+            onConversationSelected={onConversationSelected}
+          />
         ))}
       </div>
     </div>

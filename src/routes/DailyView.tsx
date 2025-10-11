@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { fetchDayData } from '@/lib/api';
-import { loadIndexData } from '@/lib/dataLoader';
+import { loadAvailableDateStrings, loadIndexData } from '@/lib/dataLoader';
 import { DayData } from '@/types';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import DailyHeader from '@/components/DailyHeader';
@@ -18,14 +18,20 @@ export default function DailyView() {
   const [dayData, setDayData] = useState<DayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showOrphanedMedia, setShowOrphanedMedia] = useState(false);
+  const [isMobileConversationsOpen, setIsMobileConversationsOpen] = useState(true);
   const indexData = useArchiveStore((state) => state.indexData);
+  const availableDateStrings = useArchiveStore((state) => state.availableDates);
   const setIndexData = useArchiveStore((state) => state.setIndexData);
+  const setAvailableDates = useArchiveStore((state) => state.setAvailableDates);
   const setConversations = useArchiveStore((state) => state.setConversations);
   const setCurrentConversation = useArchiveStore((state) => state.setCurrentConversation);
   const setAccountUsername = useArchiveStore(
     (state) => state.setAccountUsername
   );
   const setCurrentDate = useArchiveStore((state) => state.setCurrentDate);
+  const currentConversation = useArchiveStore(
+    (state) => state.currentConversation
+  );
 
   useKeyboardShortcuts();
 
@@ -37,6 +43,9 @@ export default function DailyView() {
           const data = await loadIndexData();
           setIndexData(data);
           setAccountUsername(data.account_owner);
+
+          const dates = await loadAvailableDateStrings(data);
+          setAvailableDates(dates);
         } catch (error) {
           console.error('Failed to load index data:', error);
         }
@@ -44,23 +53,57 @@ export default function DailyView() {
     };
 
     loadIndex();
-  }, [indexData, setIndexData, setAccountUsername]);
+  }, [indexData, setIndexData, setAccountUsername, setAvailableDates]);
+
+  useEffect(() => {
+    const ensureAvailableDates = async () => {
+      if (!indexData || availableDateStrings.length > 0) {
+        return;
+      }
+
+      try {
+        const dates = await loadAvailableDateStrings(indexData);
+        setAvailableDates(dates);
+      } catch (error) {
+        console.error('Failed to load available dates:', error);
+      }
+    };
+
+    ensureAvailableDates();
+  }, [indexData, availableDateStrings, setAvailableDates]);
 
   // Load day data when date changes
   useEffect(() => {
     const loadData = async () => {
       if (!indexData) return; // Wait for index data first
-      
+
+      const fallbackDate =
+        date || (availableDateStrings.length > 0 ? availableDateStrings[0] : undefined);
+
+      if (!fallbackDate) {
+        return;
+      }
+
       try {
         setLoading(true);
-        const currentDate = date || '2025-08-24';
-        setCurrentDate(currentDate); // Set the current viewing date
-        const data = await fetchDayData(currentDate, indexData);
+        const data = await fetchDayData(fallbackDate, indexData);
         setDayData(data);
         setConversations(data.conversations);
+        setCurrentDate(data.date);
+
+        if (!availableDateStrings.includes(data.date)) {
+          const updatedDates = Array.from(
+            new Set([...availableDateStrings, data.date])
+          ).sort((a, b) => a.localeCompare(b));
+          setAvailableDates(updatedDates);
+        }
 
         // Handle conversation selection from navigation
-        const previousConversationId = (location.state as any)?.previousConversationId;
+        const navigationState = location.state as
+          | { previousConversationId?: string }
+          | null
+          | undefined;
+        const previousConversationId = navigationState?.previousConversationId;
         if (previousConversationId) {
           // Try to find the same conversation on this day
           const matchingConversation = data.conversations.find(
@@ -83,7 +126,29 @@ export default function DailyView() {
     };
 
     loadData();
-  }, [date, indexData, location.state, setConversations, setCurrentConversation, setCurrentDate]);
+  }, [
+    date,
+    indexData,
+    location.state,
+    availableDateStrings,
+    setConversations,
+    setCurrentConversation,
+    setCurrentDate,
+    setAvailableDates,
+  ]);
+
+  useEffect(() => {
+    if (showOrphanedMedia) {
+      setIsMobileConversationsOpen(false);
+      return;
+    }
+
+    if (currentConversation) {
+      setIsMobileConversationsOpen(false);
+    } else if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setIsMobileConversationsOpen(true);
+    }
+  }, [currentConversation, showOrphanedMedia]);
 
   if (loading) {
     return (
@@ -101,6 +166,28 @@ export default function DailyView() {
     );
   }
 
+  const handleToggleOrphanedMedia = () => {
+    setShowOrphanedMedia((prev) => {
+      const next = !prev;
+      if (next) {
+        setIsMobileConversationsOpen(false);
+      }
+      return next;
+    });
+  };
+
+  const handleMobileConversationToggle = () => {
+    setIsMobileConversationsOpen((prev) => !prev);
+  };
+
+  const handleMobileConversationOpen = () => {
+    setIsMobileConversationsOpen(true);
+  };
+
+  const handleConversationSelected = () => {
+    setIsMobileConversationsOpen(false);
+  };
+
   return (
     <div className="h-screen flex flex-col bg-bg-primary overflow-hidden">
       <DailyHeader
@@ -108,16 +195,36 @@ export default function DailyView() {
         stats={dayData.stats}
         orphanedCount={dayData.orphanedMedia?.orphaned_media_count || 0}
         showOrphanedMedia={showOrphanedMedia}
-        onToggleOrphanedMedia={() => setShowOrphanedMedia(!showOrphanedMedia)}
+        onToggleOrphanedMedia={handleToggleOrphanedMedia}
+        onToggleMobileConversations={
+          showOrphanedMedia ? undefined : handleMobileConversationToggle
+        }
+        isMobileConversationsOpen={
+          !showOrphanedMedia && isMobileConversationsOpen
+        }
       />
-      <div className="flex flex-1 overflow-hidden pt-[80px]">
-        {!showOrphanedMedia ? (
-          <>
-            <ConversationList />
-            <MainContent />
-          </>
-        ) : (
-          <OrphanedMediaView orphanedMedia={dayData.orphanedMedia} />
+      <div className="flex-1 relative overflow-hidden pt-[124px] md:pt-[80px]">
+        <div className="h-full">
+          {!showOrphanedMedia ? (
+            <div className="flex h-full overflow-hidden">
+              <div className="hidden md:flex">
+                <ConversationList onConversationSelected={handleConversationSelected} />
+              </div>
+              <div className="flex-1 flex">
+                <MainContent onOpenMobileConversations={handleMobileConversationOpen} />
+              </div>
+            </div>
+          ) : (
+            <div className="h-full overflow-y-auto">
+              <OrphanedMediaView orphanedMedia={dayData.orphanedMedia} />
+            </div>
+          )}
+        </div>
+
+        {isMobileConversationsOpen && !showOrphanedMedia && (
+          <div className="md:hidden absolute inset-0 bg-bg-secondary border-t border-border z-30 flex flex-col">
+            <ConversationList onConversationSelected={handleConversationSelected} />
+          </div>
         )}
       </div>
       <Lightbox />

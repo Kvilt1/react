@@ -7,9 +7,15 @@ interface ChatWindowProps {
   conversation: Conversation;
   isGalleryOpen: boolean;
   onToggleGallery: () => void;
+  onBackToList?: () => void;
 }
 
-export default function ChatWindow({ conversation, isGalleryOpen, onToggleGallery }: ChatWindowProps) {
+export default function ChatWindow({
+  conversation,
+  isGalleryOpen,
+  onToggleGallery,
+  onBackToList,
+}: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -28,6 +34,7 @@ export default function ChatWindow({ conversation, isGalleryOpen, onToggleGaller
         conversation={conversation}
         isGalleryOpen={isGalleryOpen}
         onToggleGallery={onToggleGallery}
+        onBackToList={onBackToList}
       />
       
       <MessageList
