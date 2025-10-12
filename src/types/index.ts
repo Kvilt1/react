@@ -58,6 +58,7 @@ export interface IndexData {
   account_owner: string;
   users: IndexUser[];
   groups: IndexGroup[];
+  available_dates?: string[];
 }
 
 // Normalized data types (used by the app)

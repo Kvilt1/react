@@ -9,6 +9,7 @@ import {
   Participant,
   OrphanedMedia,
 } from '@/types';
+import { parseSnapchatDate } from '@/lib/utils';
 
 /**
  * Transforms raw conversation data from JSON to normalized app format
@@ -50,7 +51,12 @@ function transformConversation(
   date: string
 ): Conversation {
   const isGroup = rawConv.conversation_type === 'group';
-  const messages = rawConv.messages.map((msg) => transformMessage(msg));
+  const sortedMessages = [...rawConv.messages].sort((a, b) => {
+    const dateA = parseSnapchatDate(a.Created).getTime();
+    const dateB = parseSnapchatDate(b.Created).getTime();
+    return dateA - dateB;
+  });
+  const messages = sortedMessages.map((msg) => transformMessage(msg));
 
   // Build participant list
   const participants = buildParticipants(rawConv, indexData);
@@ -59,8 +65,8 @@ function transformConversation(
   const stats = {
     message_count: messages.length,
     date_range: {
-      first_message: messages[0]?.created || '',
-      last_message: messages[messages.length - 1]?.created || '',
+      first_message: sortedMessages[0]?.Created || '',
+      last_message: sortedMessages[sortedMessages.length - 1]?.Created || '',
     },
   };
 
