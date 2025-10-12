@@ -12,9 +12,15 @@ import VideoReceivedIcon from '@/assets/icons/video-received.svg?react';
 
 interface ConversationItemProps {
   conversation: Conversation;
+  variant?: 'desktop' | 'mobile';
+  onSelect?: () => void;
 }
 
-export default function ConversationItem({ conversation }: ConversationItemProps) {
+export default function ConversationItem({
+  conversation,
+  variant = 'desktop',
+  onSelect,
+}: ConversationItemProps) {
   const currentConversation = useArchiveStore((state) => state.currentConversation);
   const setCurrentConversation = useArchiveStore(
     (state) => state.setCurrentConversation
@@ -110,12 +116,32 @@ export default function ConversationItem({ conversation }: ConversationItemProps
     ? (lastMessage.is_sender ? 'Opened' : 'Received')
     : 'No messages';
 
+  const containerClasses =
+    variant === 'mobile'
+      ? `flex items-center px-4 py-3 cursor-pointer transition-colors gap-3 ${
+          isActive ? 'bg-bg-tertiary/80' : 'hover:bg-hover-bg'
+        }`
+      : `flex items-center px-3 py-2 cursor-pointer transition-colors border-b border-[#696969] gap-2.5 ${
+          isActive ? 'bg-bg-tertiary' : 'hover:bg-hover-bg'
+        }`;
+
+  const nameClasses =
+    variant === 'mobile'
+      ? 'text-white text-[15px] font-semibold'
+      : 'text-white text-base font-normal';
+
+  const statusTextClasses =
+    variant === 'mobile'
+      ? 'text-white/80 text-[12px] font-medium'
+      : 'text-white text-xs font-normal';
+
   return (
     <div
-      className={`flex items-center px-3 py-2 cursor-pointer transition-colors border-b border-[#696969] gap-2.5 ${
-        isActive ? 'bg-bg-tertiary' : 'hover:bg-hover-bg'
-      }`}
-      onClick={() => setCurrentConversation(conversation)}
+      className={containerClasses}
+      onClick={() => {
+        setCurrentConversation(conversation);
+        onSelect?.();
+      }}
       role="button"
       tabIndex={0}
       aria-label={`Open conversation with ${displayName}`}
@@ -123,6 +149,7 @@ export default function ConversationItem({ conversation }: ConversationItemProps
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           setCurrentConversation(conversation);
+          onSelect?.();
         }
       }}
     >
@@ -148,8 +175,13 @@ export default function ConversationItem({ conversation }: ConversationItemProps
       </div>
       
       {/* User & Status */}
-      <div className="flex-1 min-w-0 h-[54px] py-1 flex flex-col justify-start gap-1" style={{ fontFamily: 'Avenir Next' }}>
-        <div className="flex justify-center flex-col text-white text-base font-normal">
+      <div
+        className={`flex-1 min-w-0 h-[54px] py-1 flex flex-col justify-start gap-1 ${
+          variant === 'mobile' ? 'font-sans' : ''
+        }`}
+        style={variant === 'mobile' ? undefined : { fontFamily: 'Avenir Next' }}
+      >
+        <div className={`flex justify-center flex-col ${nameClasses}`}>
           {displayName}
         </div>
         <div className="flex items-center gap-1">
@@ -160,14 +192,28 @@ export default function ConversationItem({ conversation }: ConversationItemProps
             </div>
             {/* Status Text */}
             <div className="overflow-hidden flex justify-start items-start">
-              <div className="flex justify-center flex-col text-white text-xs font-normal">
+              <div className={`flex justify-center flex-col ${statusTextClasses}`}>
                 {statusText}
               </div>
             </div>
             {/* Dot separator */}
-            <div className="flex justify-center flex-col text-white text-xs font-bold">·</div>
+            <div
+              className={`flex justify-center flex-col ${
+                variant === 'mobile'
+                  ? 'text-white/60 text-[12px] font-semibold'
+                  : 'text-white text-xs font-bold'
+              }`}
+            >
+              ·
+            </div>
             {/* Relative time */}
-            <div className="flex justify-center flex-col text-white text-xs font-normal">
+            <div
+              className={`flex justify-center flex-col ${
+                variant === 'mobile'
+                  ? 'text-white/70 text-[12px] font-medium'
+                  : 'text-white text-xs font-normal'
+              }`}
+            >
               {relativeTime}
             </div>
           </div>

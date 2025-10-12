@@ -7,8 +7,9 @@ import { transformDayData } from './dataTransformer';
  */
 export async function fetchDayData(
   date: string,
-  indexData: IndexData
+  indexData: IndexData,
+  signal?: AbortSignal
 ): Promise<DayData> {
-  const rawData = await loadDayData(date);
+  const rawData = await loadDayData(date, signal);
   return transformDayData(rawData, indexData);
 }

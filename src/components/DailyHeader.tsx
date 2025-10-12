@@ -1,7 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePickerPopup from './DatePickerPopup';
-import { getAvailableDates } from '@/lib/dataLoader';
 import { useArchiveStore } from '@/store/useArchiveStore';
 
 interface DailyHeaderProps {
@@ -35,7 +34,15 @@ export default function DailyHeader({
     day: 'numeric',
   });
 
-  const availableDates = getAvailableDates();
+  const availableDateStrings = useArchiveStore((state) => state.availableDates);
+
+  const availableDates = useMemo(
+    () =>
+      availableDateStrings
+        .map((value) => new Date(value))
+        .filter((value) => !Number.isNaN(value.getTime())),
+    [availableDateStrings]
+  );
 
   // Find previous and next available dates
   const { previousDate, nextDate } = useMemo(() => {

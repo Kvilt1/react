@@ -7,9 +7,15 @@ interface ChatWindowProps {
   conversation: Conversation;
   isGalleryOpen: boolean;
   onToggleGallery: () => void;
+  showHeader?: boolean;
 }
 
-export default function ChatWindow({ conversation, isGalleryOpen, onToggleGallery }: ChatWindowProps) {
+export default function ChatWindow({
+  conversation,
+  isGalleryOpen,
+  onToggleGallery,
+  showHeader = true,
+}: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,11 +30,13 @@ export default function ChatWindow({ conversation, isGalleryOpen, onToggleGaller
 
   return (
     <div className="flex-1 flex flex-col bg-bg-primary relative overflow-hidden">
-      <ChatHeader
-        conversation={conversation}
-        isGalleryOpen={isGalleryOpen}
-        onToggleGallery={onToggleGallery}
-      />
+      {showHeader && (
+        <ChatHeader
+          conversation={conversation}
+          isGalleryOpen={isGalleryOpen}
+          onToggleGallery={onToggleGallery}
+        />
+      )}
       
       <MessageList
         conversation={conversation}
