@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { Conversation, MediaFilter, MediaItem, IndexData } from '@/types';
+import { parseSnapchatDate } from '@/lib/utils';
 
 interface SearchState {
   query: string;
-  results: HTMLElement[];
+  resultMessageIds: string[];
   currentIndex: number;
 }
 
@@ -27,7 +28,10 @@ interface ArchiveStore {
   
   // Current viewing date (for relative time calculations)
   currentDate: string | null;
-  
+
+  // Available archive dates
+  availableDates: string[];
+
   // Search state
   searchState: SearchState;
   
@@ -47,8 +51,9 @@ interface ArchiveStore {
   setCurrentConversation: (conversation: Conversation | null) => void;
   setAccountUsername: (username: string) => void;
   setCurrentDate: (date: string) => void;
+  setAvailableDates: (dates: string[]) => void;
   setSearchQuery: (query: string) => void;
-  setSearchResults: (results: HTMLElement[], currentIndex: number) => void;
+  setSearchResults: (resultIds: string[], currentIndex: number) => void;
   setMediaFilter: (filter: MediaFilter) => void;
   openLightbox: (src: string, type: 'image' | 'video' | 'audio', items?: MediaItem[], index?: number) => void;
   closeLightbox: () => void;
@@ -59,15 +64,39 @@ interface ArchiveStore {
   triggerAudioPlay: (src: string) => void;
 }
 
+const sortConversationsByLastMessage = (
+  conversations: Conversation[]
+) => {
+  return [...conversations].sort((a, b) => {
+    const lastA = a.stats.date_range.last_message
+      ? parseSnapchatDate(a.stats.date_range.last_message).getTime()
+      : 0;
+    const lastB = b.stats.date_range.last_message
+      ? parseSnapchatDate(b.stats.date_range.last_message).getTime()
+      : 0;
+    return lastB - lastA;
+  });
+};
+
+const normalizeDates = (dates: string[]) => {
+  const unique = Array.from(new Set(dates));
+  return unique
+    .map((value) => ({ value, time: new Date(value).getTime() }))
+    .filter((entry) => !Number.isNaN(entry.time))
+    .sort((a, b) => a.time - b.time)
+    .map((entry) => entry.value);
+};
+
 export const useArchiveStore = create<ArchiveStore>((set) => ({
   indexData: null,
   currentConversation: null,
   conversations: [],
   accountUsername: null,
   currentDate: null,
+  availableDates: [],
   searchState: {
     query: '',
-    results: [],
+    resultMessageIds: [],
     currentIndex: 0,
   },
   currentMediaFilter: 'all',
@@ -83,16 +112,18 @@ export const useArchiveStore = create<ArchiveStore>((set) => ({
   audioPlayCallbacks: new Map(),
   
   setIndexData: (data) => set({ indexData: data }),
-  setConversations: (conversations) => set({ conversations }),
+  setConversations: (conversations) =>
+    set({ conversations: sortConversationsByLastMessage(conversations) }),
   setCurrentConversation: (conversation) => set({ currentConversation: conversation }),
   setAccountUsername: (username) => set({ accountUsername: username }),
   setCurrentDate: (date) => set({ currentDate: date }),
+  setAvailableDates: (dates) => set({ availableDates: normalizeDates(dates) }),
   setCurrentlyPlayingAudio: (audio) => set({ currentlyPlayingAudio: audio }),
   setSearchQuery: (query) => set((state) => ({
     searchState: { ...state.searchState, query },
   })),
-  setSearchResults: (results, currentIndex) => set((state) => ({
-    searchState: { ...state.searchState, results, currentIndex },
+  setSearchResults: (resultIds, currentIndex) => set((state) => ({
+    searchState: { ...state.searchState, resultMessageIds: resultIds, currentIndex },
   })),
   setMediaFilter: (filter) => set({ currentMediaFilter: filter }),
   openLightbox: (src, type, items = [], index = -1) => set({
