@@ -8,12 +8,14 @@ interface MediaGalleryProps {
   conversation: Conversation;
   isGalleryOpen: boolean;
   onToggleGallery: () => void;
+  showHeader?: boolean;
 }
 
 export default function MediaGallery({
   conversation,
   isGalleryOpen,
   onToggleGallery,
+  showHeader = true,
 }: MediaGalleryProps) {
   const [filter, setFilter] = useState<MediaFilter>('all');
   const [allMediaItems, setAllMediaItems] = useState<MediaItem[]>([]);
@@ -83,11 +85,13 @@ export default function MediaGallery({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <ChatHeader
-        conversation={conversation}
-        isGalleryOpen={isGalleryOpen}
-        onToggleGallery={onToggleGallery}
-      />
+      {showHeader && (
+        <ChatHeader
+          conversation={conversation}
+          isGalleryOpen={isGalleryOpen}
+          onToggleGallery={onToggleGallery}
+        />
+      )}
       
       <div className="px-5 py-4 bg-bg-secondary border-b border-border">
         <div className="flex gap-3 mb-3 flex-wrap">
