@@ -8,11 +8,15 @@ import { getAvailableDates } from '@/lib/dataLoader';
 interface DatePickerPopupProps {
   currentDate: Date;
   onClose: () => void;
+  availableDates?: Date[];
+  onDateSelect?: (date: Date) => void;
 }
 
 export default function DatePickerPopup({
   currentDate,
   onClose,
+  availableDates: providedDates,
+  onDateSelect,
 }: DatePickerPopupProps) {
   const [selected, setSelected] = useState<Date>(currentDate);
   const [displayMonth, setDisplayMonth] = useState<Date>(currentDate);
@@ -20,14 +24,18 @@ export default function DatePickerPopup({
   const navigate = useNavigate();
   const popupRef = useRef<HTMLDivElement>(null);
 
-  // Fetch available dates on mount
+  // Fetch available dates on mount (or use provided dates)
   useEffect(() => {
-    const loadDates = async () => {
-      const dates = await getAvailableDates();
-      setAvailableDates(dates);
-    };
-    loadDates();
-  }, []);
+    if (providedDates) {
+      setAvailableDates(providedDates);
+    } else {
+      const loadDates = async () => {
+        const dates = await getAvailableDates();
+        setAvailableDates(dates);
+      };
+      loadDates();
+    }
+  }, [providedDates]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -57,9 +65,15 @@ export default function DatePickerPopup({
   const handleSelect = (date: Date | undefined) => {
     if (date) {
       setSelected(date);
-      const formattedDate = format(date, 'yyyy-MM-dd');
-      navigate(`/day/${formattedDate}`);
-      onClose();
+      if (onDateSelect) {
+        // Custom date selection handler (for focus mode)
+        onDateSelect(date);
+      } else {
+        // Default navigation to daily view
+        const formattedDate = format(date, 'yyyy-MM-dd');
+        navigate(`/day/${formattedDate}`);
+        onClose();
+      }
     }
   };
 

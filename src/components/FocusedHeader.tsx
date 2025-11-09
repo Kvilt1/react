@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import DatePickerPopup from './DatePickerPopup';
-import { getAvailableDates } from '@/lib/dataLoader';
+import { Conversation } from '@/types';
 import { useArchiveStore } from '@/store/useArchiveStore';
 
-interface DailyHeaderProps {
+interface FocusedHeaderProps {
   date: string;
   stats: {
     conversationCount: number;
@@ -14,19 +14,25 @@ interface DailyHeaderProps {
   orphanedCount: number;
   showOrphanedMedia: boolean;
   onToggleOrphanedMedia: () => void;
+  conversation: Conversation;
+  conversationDates: string[];
+  onExitFocus: () => void;
 }
 
-export default function DailyHeader({
+export default function FocusedHeader({
   date,
   stats,
   orphanedCount,
   showOrphanedMedia,
   onToggleOrphanedMedia,
-}: DailyHeaderProps) {
+  conversation,
+  conversationDates,
+  onExitFocus,
+}: FocusedHeaderProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const navigate = useNavigate();
-  const currentConversation = useArchiveStore((state) => state.currentConversation);
+  const { conversationId } = useParams<{ conversationId: string }>();
+  const indexData = useArchiveStore((state) => state.indexData);
 
   const dateObj = new Date(date);
   const formattedDate = dateObj.toLocaleDateString('en-US', {
@@ -36,61 +42,68 @@ export default function DailyHeader({
     day: 'numeric',
   });
 
-  // Fetch available dates on mount
-  useEffect(() => {
-    const loadDates = async () => {
-      const dates = await getAvailableDates();
-      setAvailableDates(dates);
-    };
-    loadDates();
-  }, []);
-
-  // Find previous and next available dates
+  // Find previous and next available dates for this conversation
   const { previousDate, nextDate } = useMemo(() => {
-    const sortedDates = [...availableDates].sort((a, b) => a.getTime() - b.getTime());
-    const currentIndex = sortedDates.findIndex(
-      (d) => d.toISOString().split('T')[0] === date
-    );
+    const currentIndex = conversationDates.indexOf(date);
 
     return {
-      previousDate: currentIndex > 0 ? sortedDates[currentIndex - 1] : null,
+      previousDate: currentIndex > 0 ? conversationDates[currentIndex - 1] : null,
       nextDate:
-        currentIndex >= 0 && currentIndex < sortedDates.length - 1
-          ? sortedDates[currentIndex + 1]
+        currentIndex >= 0 && currentIndex < conversationDates.length - 1
+          ? conversationDates[currentIndex + 1]
           : null,
     };
-  }, [availableDates, date]);
+  }, [conversationDates, date]);
 
   const handlePreviousDay = () => {
-    if (previousDate) {
-      const dateStr = previousDate.toISOString().split('T')[0];
-      navigate(`/day/${dateStr}`, { 
-        state: { previousConversationId: currentConversation?.id } 
-      });
+    if (previousDate && conversationId) {
+      navigate(`/conversation/${conversationId}/${previousDate}`);
     }
   };
 
   const handleNextDay = () => {
-    if (nextDate) {
-      const dateStr = nextDate.toISOString().split('T')[0];
-      navigate(`/day/${dateStr}`, { 
-        state: { previousConversationId: currentConversation?.id } 
-      });
+    if (nextDate && conversationId) {
+      navigate(`/conversation/${conversationId}/${nextDate}`);
     }
   };
 
-  const handleDashboard = () => {
-    navigate('/');
+  // Get conversation participant info for display
+  const getConversationDisplay = () => {
+    if (conversation.type === 'group') {
+      // For groups, show group name
+      const groupName = conversation.name.replace('Chat - ', '');
+      return {
+        name: groupName,
+        subtitle: `${conversation.metadata.participants.length} members`,
+        avatar: null, // Groups don't have bitmoji
+      };
+    } else {
+      // For DMs, show the participant info
+      const participant = conversation.metadata.participants[0];
+      if (participant) {
+        const user = indexData?.users.find(u => u.username === participant.username);
+        return {
+          name: participant.display_name === 'NOT FOUND IN FRIENDS LIST'
+            ? participant.username
+            : participant.display_name || participant.username,
+          subtitle: participant.username,
+          avatar: user?.bitmoji || null,
+        };
+      }
+    }
+    return { name: conversation.name, subtitle: '', avatar: null };
   };
+
+  const displayInfo = getConversationDisplay();
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[100] bg-bg-secondary border-b border-border px-5 py-3 min-h-[80px]">
-      {/* Dashboard button in top left */}
-      <div className="absolute left-5 top-1/2 -translate-y-1/2">
+      {/* Exit Focus button in top left */}
+      <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-4">
         <button
-          onClick={handleDashboard}
+          onClick={onExitFocus}
           className="px-4 py-2 bg-bg-tertiary border border-border rounded text-text-primary text-sm font-medium flex items-center gap-2 transition-all hover:bg-hover-bg hover:border-accent hover:-translate-y-px"
-          aria-label="Return to Dashboard"
+          aria-label="Exit Focus Mode"
         >
           <svg
             className="w-4 h-4"
@@ -102,11 +115,34 @@ export default function DailyHeader({
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              d="M6 18L18 6M6 6l12 12"
             />
           </svg>
-          Dashboard
+          Exit Focus
         </button>
+
+        {/* Conversation Info */}
+        <div className="flex items-center gap-3 border-l border-border pl-4">
+          {displayInfo.avatar ? (
+            <img
+              src={displayInfo.avatar}
+              alt={displayInfo.name}
+              className="w-10 h-10 rounded-full bg-bg-tertiary"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+              <span className="text-accent text-lg font-semibold">
+                {displayInfo.name[0]?.toUpperCase()}
+              </span>
+            </div>
+          )}
+          <div>
+            <div className="text-text-primary font-medium">{displayInfo.name}</div>
+            {displayInfo.subtitle && (
+              <div className="text-text-secondary text-xs">{displayInfo.subtitle}</div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Center navigation controls */}
@@ -119,11 +155,11 @@ export default function DailyHeader({
               ? 'cursor-pointer hover:bg-hover-bg hover:border-accent hover:-translate-y-px'
               : 'opacity-30 cursor-not-allowed'
           }`}
-          aria-label="Previous day"
+          aria-label="Previous day with activity"
         >
           ← Previous Day
         </button>
-        
+
         <div className="text-center">
           <h1
             className="text-xl text-accent m-0 font-semibold cursor-pointer hover:underline transition-all"
@@ -141,11 +177,13 @@ export default function DailyHeader({
             {formattedDate}
           </h1>
           <div className="text-xs text-text-secondary mt-1">
-            <span>{stats.conversationCount} conversations</span>
-            <span className="mx-2">•</span>
             <span>{stats.messageCount} messages</span>
             <span className="mx-2">•</span>
             <span>{stats.mediaCount} media</span>
+            <span className="mx-2">•</span>
+            <span className="text-accent font-medium">
+              Day {conversationDates.indexOf(date) + 1} of {conversationDates.length}
+            </span>
             {orphanedCount > 0 && (
               <>
                 <span className="mx-2">•</span>
@@ -168,7 +206,7 @@ export default function DailyHeader({
             )}
           </div>
         </div>
-        
+
         <button
           onClick={handleNextDay}
           disabled={!nextDate}
@@ -177,7 +215,7 @@ export default function DailyHeader({
               ? 'cursor-pointer hover:bg-hover-bg hover:border-accent hover:-translate-y-px'
               : 'opacity-30 cursor-not-allowed'
           }`}
-          aria-label="Next day"
+          aria-label="Next day with activity"
         >
           Next Day →
         </button>
@@ -187,6 +225,14 @@ export default function DailyHeader({
         <DatePickerPopup
           currentDate={dateObj}
           onClose={() => setShowDatePicker(false)}
+          availableDates={conversationDates.map(d => new Date(d))}
+          onDateSelect={(selectedDate) => {
+            const dateStr = selectedDate.toISOString().split('T')[0];
+            if (conversationDates.includes(dateStr) && conversationId) {
+              navigate(`/conversation/${conversationId}/${dateStr}`);
+            }
+            setShowDatePicker(false);
+          }}
         />
       )}
     </div>

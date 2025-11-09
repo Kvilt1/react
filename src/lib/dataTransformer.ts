@@ -59,10 +59,16 @@ function transformConversation(
   date: string
 ): Conversation {
   const isGroup = rawConv.conversation_type === 'group';
-  // Filter out STATUS messages
+  // Filter out STATUS messages and sort by timestamp
   const messages = rawConv.messages
     .filter((msg) => msg['Media Type'] !== 'STATUS')
-    .map((msg) => transformMessage(msg));
+    .map((msg) => transformMessage(msg))
+    .sort((a, b) => {
+      // Parse the timestamps and sort chronologically
+      const dateA = new Date(a.created).getTime();
+      const dateB = new Date(b.created).getTime();
+      return dateA - dateB;
+    });
 
   // Build participant list
   const participants = buildParticipants(rawConv, indexData);

@@ -125,11 +125,11 @@ export default function Message({
         <div className="flex-1 min-w-0">
           {/* Handle media and snaps */}
           {message.message_type === 'snap' &&
-            (!message.media_ids || !message.media_ids.trim()) && (
+            (!message.media_locations || message.media_locations.length === 0) && (
               <SnapIndicator mediaType={message.media_type} />
             )}
-          
-          {message.media_ids && message.media_ids.trim() && (
+
+          {message.media_locations && message.media_locations.length > 0 && (
             <MessageMedia
               message={message}
               conversation={conversation}

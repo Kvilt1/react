@@ -19,34 +19,42 @@ interface LightboxState {
 interface ArchiveStore {
   // Index data (users, groups, account owner)
   indexData: IndexData | null;
-  
+
   // Conversation state
   currentConversation: Conversation | null;
   conversations: Conversation[];
   accountUsername: string | null;
-  
+
   // Current viewing date (for relative time calculations)
   currentDate: string | null;
-  
+
+  // Focus mode state
+  focusMode: boolean;
+  focusedConversationId: string | null;
+  focusedConversationDates: string[];
+
   // Search state
   searchState: SearchState;
-  
+
   // Media state
   currentMediaFilter: MediaFilter;
-  
+
   // Lightbox state
   lightboxState: LightboxState;
-  
+
   // Audio playback state
   currentlyPlayingAudio: HTMLAudioElement | null;
   audioPlayCallbacks: Map<string, () => void>;
-  
+
   // Actions
   setIndexData: (data: IndexData) => void;
   setConversations: (conversations: Conversation[]) => void;
   setCurrentConversation: (conversation: Conversation | null) => void;
   setAccountUsername: (username: string) => void;
   setCurrentDate: (date: string) => void;
+  setFocusMode: (enabled: boolean) => void;
+  setFocusedConversationId: (id: string | null) => void;
+  setFocusedConversationDates: (dates: string[]) => void;
   setSearchQuery: (query: string) => void;
   setSearchResults: (results: HTMLElement[], currentIndex: number) => void;
   setMediaFilter: (filter: MediaFilter) => void;
@@ -65,6 +73,9 @@ export const useArchiveStore = create<ArchiveStore>((set) => ({
   conversations: [],
   accountUsername: null,
   currentDate: null,
+  focusMode: false,
+  focusedConversationId: null,
+  focusedConversationDates: [],
   searchState: {
     query: '',
     results: [],
@@ -81,12 +92,15 @@ export const useArchiveStore = create<ArchiveStore>((set) => ({
   },
   currentlyPlayingAudio: null,
   audioPlayCallbacks: new Map(),
-  
+
   setIndexData: (data) => set({ indexData: data }),
   setConversations: (conversations) => set({ conversations }),
   setCurrentConversation: (conversation) => set({ currentConversation: conversation }),
   setAccountUsername: (username) => set({ accountUsername: username }),
   setCurrentDate: (date) => set({ currentDate: date }),
+  setFocusMode: (enabled) => set({ focusMode: enabled }),
+  setFocusedConversationId: (id) => set({ focusedConversationId: id }),
+  setFocusedConversationDates: (dates) => set({ focusedConversationDates: dates }),
   setCurrentlyPlayingAudio: (audio) => set({ currentlyPlayingAudio: audio }),
   setSearchQuery: (query) => set((state) => ({
     searchState: { ...state.searchState, query },
