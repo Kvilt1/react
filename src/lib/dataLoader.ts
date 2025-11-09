@@ -1,5 +1,8 @@
 import { IndexData, RawDayData } from '@/types';
 
+// Cache for available dates to avoid multiple fetches
+let cachedDates: Date[] | null = null;
+
 /**
  * Loads the index.json file containing all users and groups
  */
@@ -23,26 +26,45 @@ export async function loadDayData(date: string): Promise<RawDayData> {
 }
 
 /**
- * Gets list of available dates by scanning the days directory
- * For now, this is hardcoded but could be made dynamic
+ * Fetches available dates from the API endpoint
  */
-export function getAvailableDates(): Date[] {
-  // These are the dates we have in the public/days folder
-  const dateStrings = [
-    '2025-08-24',
-    '2025-08-25',
-    '2025-08-26',
-    '2025-08-27',
-    '2025-08-28',
-    '2025-08-29',
-    '2025-08-30',
-    '2025-08-31',
-    '2025-09-01',
-    '2025-09-02',
-    '2025-09-03',
-    '2025-09-04',
-    '2025-09-05',
-  ];
+export async function fetchAvailableDates(): Promise<string[]> {
+  try {
+    const response = await fetch('/api/available-dates');
+    if (!response.ok) {
+      throw new Error('Failed to fetch available dates');
+    }
+    const data = await response.json();
+    return data.dates || [];
+  } catch (error) {
+    console.error('Error fetching available dates:', error);
+    // Return empty array if fetch fails
+    return [];
+  }
+}
 
-  return dateStrings.map((dateStr) => new Date(dateStr));
+/**
+ * Gets list of available dates by dynamically fetching from the server
+ * Results are cached for the session
+ */
+export async function getAvailableDates(): Promise<Date[]> {
+  // Return cached dates if available
+  if (cachedDates !== null) {
+    return cachedDates;
+  }
+
+  // Fetch dates from the server
+  const dateStrings = await fetchAvailableDates();
+
+  // Convert to Date objects and cache
+  cachedDates = dateStrings.map((dateStr) => new Date(dateStr));
+
+  return cachedDates;
+}
+
+/**
+ * Clears the cached dates (useful if dates might have changed)
+ */
+export function clearDateCache(): void {
+  cachedDates = null;
 }

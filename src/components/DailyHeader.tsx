@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DatePickerPopup from './DatePickerPopup';
 import { getAvailableDates } from '@/lib/dataLoader';
@@ -24,9 +24,10 @@ export default function DailyHeader({
   onToggleOrphanedMedia,
 }: DailyHeaderProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const navigate = useNavigate();
   const currentConversation = useArchiveStore((state) => state.currentConversation);
-  
+
   const dateObj = new Date(date);
   const formattedDate = dateObj.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -35,7 +36,14 @@ export default function DailyHeader({
     day: 'numeric',
   });
 
-  const availableDates = getAvailableDates();
+  // Fetch available dates on mount
+  useEffect(() => {
+    const loadDates = async () => {
+      const dates = await getAvailableDates();
+      setAvailableDates(dates);
+    };
+    loadDates();
+  }, []);
 
   // Find previous and next available dates
   const { previousDate, nextDate } = useMemo(() => {
@@ -150,7 +158,6 @@ export default function DailyHeader({
         <DatePickerPopup
           currentDate={dateObj}
           onClose={() => setShowDatePicker(false)}
-          availableDates={availableDates}
         />
       )}
     </div>

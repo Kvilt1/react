@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { fetchDayData } from '@/lib/api';
-import { loadIndexData } from '@/lib/dataLoader';
+import { loadIndexData, getAvailableDates } from '@/lib/dataLoader';
 import { DayData } from '@/types';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import DailyHeader from '@/components/DailyHeader';
@@ -15,6 +15,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 export default function DailyView() {
   const { date } = useParams<{ date: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const [dayData, setDayData] = useState<DayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showOrphanedMedia, setShowOrphanedMedia] = useState(false);
@@ -46,16 +47,41 @@ export default function DailyView() {
     loadIndex();
   }, [indexData, setIndexData, setAccountUsername]);
 
+  // Redirect to earliest available date if no date is provided
+  useEffect(() => {
+    const checkAndRedirect = async () => {
+      if (!date) {
+        try {
+          const availableDates = await getAvailableDates();
+          if (availableDates.length > 0) {
+            // Sort dates to ensure we get the earliest
+            const sortedDates = [...availableDates].sort((a, b) => a.getTime() - b.getTime());
+            const earliestDate = sortedDates[0];
+            const dateStr = earliestDate.toISOString().split('T')[0];
+            navigate(`/day/${dateStr}`, { replace: true });
+          } else {
+            console.warn('No available dates found');
+            setLoading(false);
+          }
+        } catch (error) {
+          console.error('Failed to fetch available dates:', error);
+          setLoading(false);
+        }
+      }
+    };
+
+    checkAndRedirect();
+  }, [date, navigate]);
+
   // Load day data when date changes
   useEffect(() => {
     const loadData = async () => {
-      if (!indexData) return; // Wait for index data first
-      
+      if (!indexData || !date) return; // Wait for index data and date
+
       try {
         setLoading(true);
-        const currentDate = date || '2025-08-24';
-        setCurrentDate(currentDate); // Set the current viewing date
-        const data = await fetchDayData(currentDate, indexData);
+        setCurrentDate(date); // Set the current viewing date
+        const data = await fetchDayData(date, indexData);
         setDayData(data);
         setConversations(data.conversations);
 
@@ -94,6 +120,20 @@ export default function DailyView() {
   }
 
   if (!dayData) {
+    // If no date is provided and no available dates, show a helpful message
+    if (!date) {
+      return (
+        <div className="flex items-center justify-center h-screen bg-bg-primary">
+          <div className="text-center">
+            <div className="text-text-secondary text-lg mb-4">No Snapchat data found</div>
+            <div className="text-text-tertiary text-sm max-w-md">
+              Please place your Snapchat data export in the <code className="text-accent">public</code> folder.
+              The export should contain an <code className="text-accent">index.json</code> file and a <code className="text-accent">days</code> folder with daily conversation data.
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex items-center justify-center h-screen bg-bg-primary">
         <div className="text-text-secondary text-lg">Failed to load data</div>

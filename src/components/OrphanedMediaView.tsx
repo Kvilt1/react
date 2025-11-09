@@ -72,7 +72,7 @@ export default function OrphanedMediaView({
       </div>
       
       <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] auto-rows-auto gap-4">
           {filteredItems.map((item, index) => (
             <MediaItemCard
               key={index}
@@ -144,16 +144,16 @@ function MediaItemCard({
           src={fullPath}
           alt={item.filename}
           loading="lazy"
-          className="w-full h-[200px] object-cover"
+          className="w-full h-auto object-contain"
         />
       )}
-      
+
       {item.type === 'VIDEO' && (
         <div className="relative">
           <video
             src={fullPath}
             preload="metadata"
-            className="w-full h-[200px] object-cover"
+            className="w-full h-auto object-contain bg-black"
           />
           {/* Play button indicator */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -163,9 +163,9 @@ function MediaItemCard({
           </div>
         </div>
       )}
-      
+
       {item.type === 'AUDIO' && (
-        <div className="flex items-center justify-center h-[200px] bg-bg-secondary">
+        <div className="flex items-center justify-center min-h-[200px] bg-bg-secondary">
           <div className="text-center">
             <div className="text-5xl">🎵</div>
             <div className="text-text-secondary text-sm mt-2">Audio File</div>

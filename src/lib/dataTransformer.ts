@@ -17,9 +17,9 @@ export function transformDayData(
   rawData: RawDayData,
   indexData: IndexData
 ): DayData {
-  const conversations = rawData.conversations.map((rawConv) =>
-    transformConversation(rawConv, indexData, rawData.date)
-  );
+  const conversations = rawData.conversations
+    .map((rawConv) => transformConversation(rawConv, indexData, rawData.date))
+    .filter((conv) => conv.messages.length > 0); // Filter out conversations with no messages (after STATUS filtering)
 
   const orphanedMedia: OrphanedMedia | null = rawData.orphanedMedia
     ? {
@@ -33,11 +33,20 @@ export function transformDayData(
       }
     : null;
 
+  // Recalculate stats to exclude STATUS messages
+  const recalculatedStats = {
+    conversationCount: conversations.length,
+    messageCount: conversations.reduce((total, conv) => total + conv.messages.length, 0),
+    mediaCount: conversations.reduce((total, conv) =>
+      total + conv.messages.filter(msg => msg.media_locations && msg.media_locations.length > 0).length, 0
+    ),
+  };
+
   return {
     date: rawData.date,
     conversations,
     orphanedMedia,
-    stats: rawData.stats,
+    stats: recalculatedStats,
   };
 }
 
@@ -50,12 +59,15 @@ function transformConversation(
   date: string
 ): Conversation {
   const isGroup = rawConv.conversation_type === 'group';
-  const messages = rawConv.messages.map((msg) => transformMessage(msg));
+  // Filter out STATUS messages
+  const messages = rawConv.messages
+    .filter((msg) => msg['Media Type'] !== 'STATUS')
+    .map((msg) => transformMessage(msg));
 
   // Build participant list
   const participants = buildParticipants(rawConv, indexData);
 
-  // Calculate stats
+  // Calculate stats (using filtered messages)
   const stats = {
     message_count: messages.length,
     date_range: {

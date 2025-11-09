@@ -150,7 +150,7 @@ export default function MediaGallery({
       </div>
       
       <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] auto-rows-auto gap-4">
           {filteredItems.map((item, index) => (
             <MediaGridItem
               key={index}
@@ -180,7 +180,7 @@ function MediaGridItem({ item, onClick }: MediaGridItemProps) {
 
   return (
     <div
-      className="relative bg-bg-tertiary rounded-lg overflow-hidden cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg aspect-square"
+      className="relative bg-bg-tertiary rounded-lg overflow-hidden cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg"
       onClick={onClick}
       onMouseEnter={() => setShowOverlay(true)}
       onMouseLeave={() => setShowOverlay(false)}
@@ -190,7 +190,7 @@ function MediaGridItem({ item, onClick }: MediaGridItemProps) {
           src={item.path}
           alt="Media"
           loading="lazy"
-          className="w-full h-full object-cover"
+          className="w-full h-auto object-contain"
         />
       )}
       {item.type === 'VIDEO' && (
@@ -198,7 +198,7 @@ function MediaGridItem({ item, onClick }: MediaGridItemProps) {
           <video
             src={item.path}
             preload="metadata"
-            className="w-full h-full object-contain bg-black"
+            className="w-full h-auto object-contain bg-black"
           />
           {/* Play button indicator */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

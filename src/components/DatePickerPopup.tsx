@@ -3,21 +3,31 @@ import { DayPicker } from 'react-day-picker';
 import { useNavigate } from 'react-router-dom';
 import { format, addMonths, subMonths, addYears, subYears } from 'date-fns';
 
+import { getAvailableDates } from '@/lib/dataLoader';
+
 interface DatePickerPopupProps {
   currentDate: Date;
   onClose: () => void;
-  availableDates?: Date[];
 }
 
 export default function DatePickerPopup({
   currentDate,
   onClose,
-  availableDates = [],
 }: DatePickerPopupProps) {
   const [selected, setSelected] = useState<Date>(currentDate);
   const [displayMonth, setDisplayMonth] = useState<Date>(currentDate);
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const navigate = useNavigate();
   const popupRef = useRef<HTMLDivElement>(null);
+
+  // Fetch available dates on mount
+  useEffect(() => {
+    const loadDates = async () => {
+      const dates = await getAvailableDates();
+      setAvailableDates(dates);
+    };
+    loadDates();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
